@@ -26,6 +26,7 @@ export const useRoomStore = create((set) => ({
   partnerTouching: false,
   isTyping: false,
   typingMsg: '',
+  unreadChatCount: 0,
 
   setRoom: (room) => set({
     room,
@@ -33,12 +34,12 @@ export const useRoomStore = create((set) => ({
     currentSong: room?.song || null,
     members: room?.users || [],
   }),
+  // ... existing actions ...
   setSocket: (socket) => set({ socket }),
   setIsPlaying: (isPlaying) => set({ isPlaying }),
   setVolume: (volume) => set({ volume }),
   setProgress: (progress) => set({ progress }),
   setCurrentSong: (currentSong) => set({ currentSong }),
-  // alias used by Room.jsx socket listener
   updateCurrentSong: (song) => set((state) => ({
     room: state.room ? { ...state.room, song } : state.room,
     currentSong: song,
@@ -61,7 +62,13 @@ export const useRoomStore = create((set) => ({
   updateSongProgress: (progress) => set({ progress }),
 
   setMoodMode: (mood) => set({ moodMode: mood }),
-  addChatMessage: (msg) => set((state) => ({ chatMessages: [...state.chatMessages, msg] })),
+  addChatMessage: (msg) => set((state) => ({ 
+    chatMessages: [...state.chatMessages, msg],
+    // Logic for unread is handled in the component to check current tab
+  })),
+  incrementUnreadChatCount: () => set((state) => ({ unreadChatCount: state.unreadChatCount + 1 })),
+  resetUnreadChatCount: () => set({ unreadChatCount: 0 }),
+  
   addLoveNote: (note) => set((state) => ({ loveNotes: [...state.loveNotes, note] })),
   addVirtualGift: (gift) => set((state) => ({ virtualGifts: [...state.virtualGifts, gift] })),
   addEmoji: (emoji) => set((state) => ({ emojis: [...state.emojis, emoji] })),

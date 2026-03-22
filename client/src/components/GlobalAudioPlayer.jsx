@@ -236,11 +236,25 @@ export default function GlobalAudioPlayer() {
         videoId={currentSong?.videoId || currentSong?.id || 'dQw4w9WgXcQ'}
         opts={{
           width: '1', height: '1',
-          playerVars: { autoplay: 1, controls: 0, rel: 0, playsinline: 1, fs: 0, modestbranding: 1 },
+          playerVars: { 
+            autoplay: 1, 
+            controls: 0, 
+            rel: 0, 
+            playsinline: 1, 
+            fs: 0, 
+            modestbranding: 1,
+            origin: window.location.origin,
+            enablejsapi: 1
+          },
         }}
         onReady={onPlayerReady}
         onStateChange={onStateChange}
         onEnd={onEnd}
+        onError={(e) => {
+          console.error("YouTube Player Error:", e.data);
+          // Auto-skip if video fails
+          if (queue?.length > 0) socket?.emit('change-song', { roomId, song: queue[0] });
+        }}
       />
     </div>
   );

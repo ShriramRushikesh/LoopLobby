@@ -211,9 +211,31 @@ const RoomPlayer = ({ isHost }) => {
               <SkipForward className={`w-7 h-7 sm:w-8 sm:h-8 fill-current ${(!hasSong || !queue?.length) && 'opacity-30'}`} />
             </motion.button>
 
-            <div className="ml-auto hidden xl:flex items-center gap-2 px-3 py-1.5 bg-pink-500/10 border border-pink-500/20 rounded-full text-pink-400 text-[10px] font-black tracking-[0.2em] uppercase">
-              <div className="w-1.5 h-1.5 bg-pink-500 rounded-full animate-pulse" />
-              <span>Crystal Sync</span>
+            {/* Recovery Controls */}
+            <div className="ml-auto flex items-center gap-2">
+              {hasSong && (
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => audioEngine.loadSong(currentSong.videoId || currentSong.id, progress)}
+                  className="p-2 bg-white/5 border border-white/10 rounded-full text-zinc-500 hover:text-white transition-colors"
+                  title="Refresh Song"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                </motion.button>
+              )}
+              
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => { audioEngine.unmute(); audioEngine.play(); }}
+                className="flex items-center gap-2 px-3 py-1.5 bg-pink-500/10 border border-pink-500/20 rounded-full text-pink-400 text-[10px] font-black tracking-tighter uppercase"
+              >
+                <div className="w-1.5 h-1.5 bg-pink-500 rounded-full animate-pulse" />
+                <span>Fix Audio</span>
+              </motion.button>
+              
+              <div className="hidden xl:flex items-center gap-2 px-3 py-1.5 bg-zinc-500/10 border border-zinc-500/20 rounded-full text-zinc-400 text-[10px] font-black tracking-[0.2em] uppercase">
+                <span>Crystal Sync</span>
+              </div>
             </div>
           </div>
         </div>

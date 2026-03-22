@@ -41,11 +41,15 @@ export default function Room() {
   const updateRoomFavorites = useRoomStore(s => s.updateRoomFavorites);
   const updateCurrentSong = useRoomStore(s => s.updateCurrentSong);
   const updateSongProgress = useRoomStore(s => s.updateSongProgress);
-
+  const unreadChatCount = useRoomStore(s => s.unreadChatCount);
+  const incrementUnreadChatCount = useRoomStore(s => s.incrementUnreadChatCount);
+  const resetUnreadChatCount = useRoomStore(s => s.resetUnreadChatCount);
+  
   const [isShaking, setIsShaking] = useState(false);
   const [copied, setCopied] = useState(false);
   const [mobileTab, setMobileTab] = useState('player');
   const [hasEntered, setHasEntered] = useState(false);
+  const [lastNotify, setLastNotify] = useState(null);
 
   const enterRoom = () => {
     setHasEntered(true);
@@ -53,6 +57,13 @@ export default function Room() {
     audioEngine.unmute();
     audioEngine.play();
   };
+
+  // Reset unread count when chat tab is active
+  useEffect(() => {
+    if (mobileTab === 'chat') {
+      resetUnreadChatCount();
+    }
+  }, [mobileTab, resetUnreadChatCount]);
 
   useEffect(() => {
     if (!state?.username) {
@@ -77,7 +88,18 @@ export default function Room() {
     newSocket.on('sync-song', updateCurrentSong);
     newSocket.on('sync-progress', updateSongProgress);
     
-    newSocket.on('receive_message', addChatMessage);
+    newSocket.on('receive_message', (msg) => {
+      addChatMessage(msg);
+      // Only notify if not from self
+      if (msg.user !== state.username) {
+        setLastNotify({ user: msg.user, text: msg.text });
+        setTimeout(() => setLastNotify(null), 3000);
+        // Increment unread count if not on chat tab
+        if (mobileTab !== 'chat') {
+          incrementUnreadChatCount();
+        }
+      }
+    });
     newSocket.on('receive_love_note', addLoveNote);
     newSocket.on('receive_gift', addVirtualGift);
     newSocket.on('receive_emoji', addEmoji);
@@ -131,7 +153,29 @@ export default function Room() {
   };
 
   return (
-    <div className={`min-h-screen transition-colors duration-1000 relative ${bgStyles[moodMode]} ${isShaking ? 'animate-[shake_0.2s_ease-in-out_4]' : ''} overflow-hidden`}>
+    <div className={`min-h-screen transition-colors duration-1000 relative ${bgStyles[moodMode]} ${isShaking ? 'animate-[shake_0.2s_ease-in-out_4]' : ''} overflow-hidden font-sans text-zinc-100`}>
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {lastNotify && (
+          <motion.div
+            initial={{ y: -100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -100, opacity: 0 }}
+            onClick={() => handleTabChange('chat')}
+            className="fixed top-20 left-1/2 -translate-x-1/2 z-[60] bg-black/60 backdrop-blur-2xl border border-white/10 px-6 py-4 rounded-3xl shadow-2xl flex items-center gap-4 cursor-pointer min-w-[300px] group"
+          >
+            <div className="w-12 h-12 bg-pink-500/20 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+              <MessageCircle className="w-6 h-6 text-pink-400 fill-current" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-black text-pink-400 uppercase tracking-widest mb-0.5">New Message</p>
+              <p className="text-sm font-bold text-white truncate"><span className="text-zinc-400">{lastNotify.user}:</span> {lastNotify.text}</p>
+            </div>
+            <ChevronRight className="w-5 h-5 text-zinc-600 group-hover:text-white transition-colors" />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <AnimatePresence>
         {!hasEntered && (
           <motion.div 
@@ -155,6 +199,14 @@ export default function Room() {
         )}
       </AnimatePresence>
 
+      {/* Background with higher z-index than blurred content */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-pink-600/10 blur-[120px] rounded-full animate-pulse" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-600/10 blur-[120px] rounded-full animate-pulse [animation-delay:2s]" />
+      </div>
+
+      <GlobalAudioPlayer />
+      
       {moodMode === 'sunset' && (
         <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
           <div className="absolute top-[30%] left-1/2 -translate-x-1/2 w-64 h-64 bg-gradient-to-br from-yellow-300 via-orange-400 to-red-500 rounded-full blur-[60px] opacity-80 animate-pulse" />
@@ -218,7 +270,7 @@ export default function Room() {
             <div className="col-span-1 h-full flex flex-col">
               <MemoizedMusicSearch />
             </div>
-            <div className="col-span-1 h-full flex flex-col bg-black/20 rounded-3xl border border-white/5 backdrop-blur-md overflow-hidden">
+            <div className="col-span-1 h-full flex flex-col bg-black/20 rounded-3xl border border-white/5 backdrop-blur-md overflow-hidden relative">
               <MemoizedChat username={state?.username} />
             </div>
           </div>
@@ -272,9 +324,20 @@ export default function Room() {
               key={tab.id}
               whileTap={{ scale: 0.8 }}
               onClick={() => handleTabChange(tab.id)} 
-              className={`flex flex-col items-center gap-1 flex-1 py-1 transition-colors ${mobileTab === tab.id ? 'text-pink-400' : 'text-zinc-500'}`}
+              className={`flex flex-col items-center gap-1 flex-1 py-1 transition-colors relative ${mobileTab === tab.id ? 'text-pink-400' : 'text-zinc-500'}`}
             >
-              {tab.icon}
+              <div className="relative">
+                {tab.icon}
+                {tab.id === 'chat' && unreadChatCount > 0 && (
+                  <motion.div 
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="absolute -top-1 -right-1 w-4 h-4 bg-pink-500 rounded-full flex items-center justify-center text-[9px] font-black text-white shadow-lg border border-black animate-pulse"
+                  >
+                    {unreadChatCount}
+                  </motion.div>
+                )}
+              </div>
               <span className={`text-[9px] font-black uppercase tracking-widest ${mobileTab === tab.id ? 'opacity-100' : 'opacity-60'}`}>{tab.label}</span>
               {mobileTab === tab.id && <motion.div layoutId="activeTab" className="w-1 h-1 bg-pink-400 rounded-full mt-0.5" />}
             </motion.button>
