@@ -25,7 +25,7 @@ export default function CoupleFeatures({ username }) {
   const socket = useRoomStore(s => s.socket);
   const moodMode = useRoomStore(s => s.moodMode);
   const currentSong = useRoomStore(s => s.currentSong);
-  const roomUsers = useRoomStore(s => s.room?.users || []);
+  const roomUsers = useRoomStore(s => s.room?.users) || [];
   const roomStats = useRoomStore(s => s.room?.stats);
 
   const [noteMsg, setNoteMsg] = useState('');

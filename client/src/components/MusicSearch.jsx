@@ -1,4 +1,4 @@
-import React, { useState, memo } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { Search, Play, Plus, Heart, Music, ListMusic, Loader2 } from 'lucide-react';
 import { useRoomStore } from '../store/useRoomStore';
 import { useQuery } from '@tanstack/react-query';
