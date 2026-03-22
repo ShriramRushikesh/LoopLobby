@@ -10,7 +10,7 @@ import Logo from '../components/Logo';
 import MusicSearch from '../components/MusicSearch';
 import { Share2, Users, MessageCircle, Instagram, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { audioEngine } from '../components/GlobalAudioPlayer';
+import GlobalAudioPlayer, { audioEngine } from '../components/GlobalAudioPlayer';
 
 // Memoize sub-components to prevent parent re-renders from affecting them
 const MemoizedRoomPlayer = memo(RoomPlayer);
