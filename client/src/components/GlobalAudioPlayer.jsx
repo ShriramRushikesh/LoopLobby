@@ -13,22 +13,34 @@ let _lastCorrection = 0; // throttle seek corrections
 export const audioEngine = {
   play() {
     _started = true;
-    try { _p.ref?.unMute(); _p.ref?.setVolume(100); _p.ref?.playVideo(); } catch (_) {}
+    try { 
+      _p.ref?.unMute(); 
+      _p.ref?.setVolume(100); 
+      _p.ref?.playVideo(); 
+    } catch (_) {}
   },
   pause() {
     try { _p.ref?.pauseVideo(); } catch (_) {}
   },
   seek(t) {
     _s.time = t;
-    _s.at = Date.now() + _s.offset; // reset anchor after manual seek
+    _s.at = Date.now() + _s.offset;
     try { _p.ref?.seekTo(t, true); } catch (_) {}
   },
-  // Load a new video without destroying the player — INSTANT song switching
+  unmute() {
+    _started = true;
+    try { 
+      _p.ref?.unMute(); 
+      _p.ref?.setVolume(100); 
+      _p.ref?.playVideo();
+    } catch (_) {}
+  },
   loadSong(videoId, startAt = 0) {
     _s.time = startAt;
     _s.at = Date.now();
     try { _p.ref?.loadVideoById({ videoId, startSeconds: startAt }); } catch (_) {}
   },
+  isReady() { return !!_p.ref; }
 };
 
 function serverNow() { return Date.now() + _s.offset; }

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, memo } from 'react';
 import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import { useRoomStore } from '../store/useRoomStore';
@@ -8,16 +8,51 @@ import CoupleFeatures from '../components/CoupleFeatures';
 import LoveNotes from '../components/LoveNotes';
 import Logo from '../components/Logo';
 import MusicSearch from '../components/MusicSearch';
-import { Share2, Users, MessageCircle, Instagram } from 'lucide-react';
+import { Share2, Users, MessageCircle, Instagram, ChevronRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { audioEngine } from '../components/GlobalAudioPlayer';
+
+// Memoize sub-components to prevent parent re-renders from affecting them
+const MemoizedRoomPlayer = memo(RoomPlayer);
+const MemoizedCoupleFeatures = memo(CoupleFeatures);
+const MemoizedMusicSearch = memo(MusicSearch);
+const MemoizedChat = memo(Chat);
 
 export default function Room() {
   const { id } = useParams();
   const { state } = useLocation();
   const navigate = useNavigate();
-  const { setSocket, setRoom, room, moodMode, setMoodMode, addChatMessage, addLoveNote, addVirtualGift, addEmoji, setTyping, updateRoomQueue, updateRoomFavorites, updateCurrentSong, updateSongProgress } = useRoomStore();
+
+  // Use individual selectors to prevent re-rendering the whole page on every store update
+  const socket = useRoomStore(s => s.socket);
+  const setSocket = useRoomStore(s => s.setSocket);
+  const setRoom = useRoomStore(s => s.setRoom);
+  const userCount = useRoomStore(s => s.room?.users?.length);
+  const isCoupleMode = useRoomStore(s => s.room?.isCoupleMode);
+  const moodMode = useRoomStore(s => s.moodMode);
+  const setMoodMode = useRoomStore(s => s.setMoodMode);
+  
+  const addChatMessage = useRoomStore(s => s.addChatMessage);
+  const addLoveNote = useRoomStore(s => s.addLoveNote);
+  const addVirtualGift = useRoomStore(s => s.addVirtualGift);
+  const addEmoji = useRoomStore(s => s.addEmoji);
+  const setTyping = useRoomStore(s => s.setTyping);
+  const updateRoomQueue = useRoomStore(s => s.updateRoomQueue);
+  const updateRoomFavorites = useRoomStore(s => s.updateRoomFavorites);
+  const updateCurrentSong = useRoomStore(s => s.updateCurrentSong);
+  const updateSongProgress = useRoomStore(s => s.updateSongProgress);
+
   const [isShaking, setIsShaking] = useState(false);
   const [copied, setCopied] = useState(false);
   const [mobileTab, setMobileTab] = useState('player');
+  const [hasEntered, setHasEntered] = useState(false);
+
+  const enterRoom = () => {
+    setHasEntered(true);
+    // Call unmute/play directly within user gesture to unlock mobile audio
+    audioEngine.unmute();
+    audioEngine.play();
+  };
 
   useEffect(() => {
     if (!state?.username) {
@@ -37,11 +72,10 @@ export default function Room() {
 
     newSocket.on('room_update', setRoom);
     newSocket.on('mood_changed', setMoodMode);
-    
     newSocket.on('queue_updated', updateRoomQueue);
     newSocket.on('favorites_updated', updateRoomFavorites);
-    newSocket.on('sync_player', updateCurrentSong);
-    newSocket.on('sync_progress', updateSongProgress);
+    newSocket.on('sync-song', updateCurrentSong);
+    newSocket.on('sync-progress', updateSongProgress);
     
     newSocket.on('receive_message', addChatMessage);
     newSocket.on('receive_love_note', addLoveNote);
@@ -59,7 +93,7 @@ export default function Room() {
     });
 
     return () => newSocket.disconnect();
-  }, [id, state, navigate]);
+  }, [id, state, navigate, setSocket, setRoom, setMoodMode, updateRoomQueue, updateRoomFavorites, updateCurrentSong, updateSongProgress, addChatMessage, addLoveNote, addVirtualGift, addEmoji, setTyping]);
 
   const shareToWhatsApp = () => {
     const text = `Join my RuRu Sync Room to vibing together! ❤️🎵\nLink: ${window.location.href}`;
@@ -67,19 +101,13 @@ export default function Room() {
   };
 
   const shareToInstagram = () => {
-    // Instagram doesn't have a direct "share to DM" URL like WhatsApp, 
-    // so we copy link and notify user to share it there.
     navigator.clipboard.writeText(window.location.href);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
     alert('Link copied! You can now paste it in Instagram DMs.');
   };
 
-  if (!state?.username) {
-    navigate(`/?roomId=${id}`);
-    // Still render nothing while navigating
-    return null;
-  }
+  if (!state?.username) return null;
 
   const bgStyles = {
     normal: 'from-zinc-950 via-zinc-900 to-zinc-950 bg-gradient-to-br',
@@ -88,102 +116,170 @@ export default function Room() {
     stars: 'from-blue-950 via-zinc-950 to-black bg-gradient-to-br'
   };
 
+  const tabVariants = {
+    enter: (direction) => ({ x: direction > 0 ? '100%' : '-100%', opacity: 0 }),
+    center: { x: 0, opacity: 1 },
+    exit: (direction) => ({ x: direction < 0 ? '100%' : '-100%', opacity: 0 })
+  };
+
+  const tabIndex = { player: 0, search: 1, extras: 2, chat: 3 };
+  const [direction, setDirection] = useState(0);
+
+  const handleTabChange = (newTab) => {
+    setDirection(tabIndex[newTab] > tabIndex[mobileTab] ? 1 : -1);
+    setMobileTab(newTab);
+  };
+
   return (
-    <div className={`min-h-screen transition-colors duration-1000 relative ${bgStyles[moodMode]} ${isShaking ? 'animate-[shake_0.2s_ease-in-out_4]' : ''}`}>
-      
-      {/* Dynamic Sunset Background */}
+    <div className={`min-h-screen transition-colors duration-1000 relative ${bgStyles[moodMode]} ${isShaking ? 'animate-[shake_0.2s_ease-in-out_4]' : ''} overflow-hidden`}>
+      <AnimatePresence>
+        {!hasEntered && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-3xl"
+          >
+            <div className="text-center p-8 max-w-sm w-full">
+              <Logo className="h-16 w-auto mx-auto mb-8 text-pink-500 animate-pulse" />
+              <h1 className="text-3xl font-black text-zinc-100 mb-2">Ready to Sync?</h1>
+              <p className="text-zinc-500 mb-8 text-sm leading-relaxed">Join the room and unlock high-fidelity audio sync with your partner.</p>
+              <button 
+                onClick={enterRoom}
+                className="w-full bg-pink-500 hover:bg-pink-400 text-white font-black py-4 rounded-full shadow-2xl shadow-pink-500/30 transition-all hover:scale-105 active:scale-95 text-lg"
+              >
+                ENTER VIBE
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {moodMode === 'sunset' && (
         <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-          <div className="absolute top-[30%] left-1/2 -translate-x-1/2 w-64 h-64 bg-gradient-to-br from-yellow-300 via-orange-400 to-red-500 rounded-full blur-[60px] opacity-80 animate-pulse"></div>
+          <div className="absolute top-[30%] left-1/2 -translate-x-1/2 w-64 h-64 bg-gradient-to-br from-yellow-300 via-orange-400 to-red-500 rounded-full blur-[60px] opacity-80 animate-pulse" />
           <div className="absolute bottom-0 left-0 w-full h-[45%] bg-gradient-to-t from-[#0f172a] via-[#1e1b4b]/80 to-transparent flex flex-col justify-end">
-            <div className="w-full h-4 bg-orange-400/20 blur-sm animate-ripple mb-2"></div>
-            <div className="w-full h-6 bg-yellow-500/10 blur-sm animate-ripple-delayed mb-4"></div>
-            <div className="w-full h-8 bg-red-500/10 blur-md animate-ripple mb-8"></div>
+            <div className="w-full h-4 bg-orange-400/20 blur-sm animate-ripple mb-2" />
+            <div className="w-full h-6 bg-yellow-500/10 blur-sm animate-ripple-delayed mb-4" />
+            <div className="w-full h-8 bg-red-500/10 blur-md animate-ripple mb-8" />
           </div>
         </div>
       )}
 
-      <div className="relative z-10 w-full h-full">
+      <div className="relative z-10 w-full h-full flex flex-col">
         <LoveNotes />
         
-        <header className="p-4 border-b border-white/5 flex justify-between items-center bg-black/20 backdrop-blur-md">
-          <div className="flex items-center gap-3">
-            <Logo className="h-10 w-auto text-pink-400 drop-shadow-[0_0_8px_rgba(236,72,153,0.5)]" />
-            <span className="text-zinc-600 hidden sm:inline-block">|</span>
-            <span className="text-sm font-medium bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent hidden sm:inline-block">
-              RuRu | sync vibes {room?.isCoupleMode ? '🕊️💕' : ''}
+        <header className="p-3 md:p-4 border-b border-white/5 flex justify-between items-center bg-black/20 backdrop-blur-md shrink-0">
+          <div className="flex items-center gap-2 md:gap-3">
+            <Logo className="h-8 md:h-10 w-auto text-pink-400 drop-shadow-[0_0_8px_rgba(236,72,153,0.5)]" />
+            <span className="text-zinc-600 hidden md:inline-block">|</span>
+            <span className="text-sm font-medium bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent hidden sm:inline-block truncate max-w-[120px] lg:max-w-none">
+              RuRu Sync {isCoupleMode ? '🕊️💕' : ''}
             </span>
           </div>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 text-zinc-400 bg-black/30 px-3 py-1.5 rounded-full">
-            <Users className="w-4 h-4" />
-            <span className="text-sm font-medium">{room?.users?.length ?? '...'}{room?.isCoupleMode ? '/2' : ''} Users</span>
-          </div>
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={shareToWhatsApp}
-                className="bg-[#25D366] hover:bg-[#20ba56] text-white p-2 rounded-full transition-all shadow-lg"
-                title="Share to WhatsApp"
-              >
-                <MessageCircle className="w-5 h-5 fill-current" />
+          
+          <div className="flex items-center gap-2 md:gap-4">
+            <div className="flex items-center gap-2 text-zinc-400 bg-black/30 px-2 py-1 md:px-3 md:py-1.5 rounded-full border border-white/5">
+              <Users className="w-3.5 h-3.5 md:w-4 h-4 text-pink-500" />
+              <span className="text-xs md:text-sm font-bold text-white">{userCount ?? '...'}{isCoupleMode ? '/2' : ''}</span>
+            </div>
+            
+            <div className="flex items-center gap-1.5 md:gap-2">
+              <button onClick={shareToWhatsApp} className="bg-[#25D366] hover:bg-[#20ba56] text-white p-1.5 md:p-2 rounded-full transition-all shadow-lg hover:scale-110 active:scale-90">
+                <MessageCircle className="w-4 h-4 md:w-5 h-5 fill-current" />
               </button>
-              <button 
-                onClick={shareToInstagram}
-                className="bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] text-white p-2 rounded-full transition-all shadow-lg"
-                title="Share to Instagram"
-              >
-                <Instagram className="w-5 h-5" />
+              <button onClick={shareToInstagram} className="bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] text-white p-1.5 md:p-2 rounded-full transition-all shadow-lg hover:scale-110 active:scale-90">
+                <Instagram className="w-4 h-4 md:w-5 h-5" />
               </button>
+              
               <button 
                 onClick={() => {
                   navigator.clipboard.writeText(window.location.href);
                   setCopied(true);
                   setTimeout(() => setCopied(false), 2000);
                 }}
-                className="flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-full transition-all text-sm font-medium w-40"
+                className="flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-full transition-all text-xs md:text-sm font-bold border border-white/10 min-w-[40px] md:min-w-[140px]"
               >
-                <Share2 className="w-4 h-4" />
-                {copied ? 'Copied!' : `Invite: ${id}`}
+                <Share2 className="w-3.5 h-3.5 md:w-4 h-4 text-pink-400" />
+                <span className="hidden md:inline">{copied ? 'Copied!' : `Invite: ${id}`}</span>
+                {copied && <span className="md:hidden">✓</span>}
               </button>
             </div>
           </div>
         </header>
 
-      <main className="max-w-[1600px] mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-140px)] lg:h-[calc(100vh-80px)]">
-        <div className={`${mobileTab === 'player' || mobileTab === 'extras' ? 'flex' : 'hidden'} lg:flex lg:col-span-2 flex-col gap-6 overflow-y-auto pb-4 custom-scrollbar`}>
-          <div className={`${mobileTab === 'player' ? 'block' : 'hidden'} lg:block shrink-0`}>
-            <RoomPlayer isHost={state?.isHost} username={state?.username} />
+        <main className="flex-1 max-w-[1600px] w-full mx-auto p-4 md:p-8 overflow-hidden relative">
+          {/* Desktop Layout */}
+          <div className="hidden lg:grid grid-cols-4 gap-6 h-full">
+            <div className="col-span-2 flex flex-col gap-6 overflow-y-auto pb-4 custom-scrollbar">
+              <MemoizedRoomPlayer isHost={state?.isHost} username={state?.username} />
+              <MemoizedCoupleFeatures username={state?.username} />
+            </div>
+            <div className="col-span-1 h-full flex flex-col">
+              <MemoizedMusicSearch />
+            </div>
+            <div className="col-span-1 h-full flex flex-col bg-black/20 rounded-3xl border border-white/5 backdrop-blur-md overflow-hidden">
+              <MemoizedChat username={state?.username} />
+            </div>
           </div>
-          <div className={`${mobileTab === 'extras' ? 'flex' : 'hidden'} lg:flex flex-col gap-6 shrink-0`}>
-            <CoupleFeatures username={state?.username} />
-          </div>
-        </div>
-        <div className={`${mobileTab === 'search' ? 'flex' : 'hidden'} lg:flex h-full flex-col lg:col-span-1`}>
-          <MusicSearch />
-        </div>
-        <div className={`${mobileTab === 'chat' ? 'flex' : 'hidden'} lg:flex h-full flex-col bg-black/20 rounded-3xl border border-white/5 backdrop-blur-md overflow-hidden lg:col-span-1`}>
-          <Chat username={state?.username} />
-        </div>
-      </main>
 
-      <nav className="lg:hidden fixed bottom-0 left-0 w-full bg-black/80 backdrop-blur-xl border-t border-white/10 flex justify-around items-center p-3 z-50 pb-5">
-        <button onClick={() => setMobileTab('player')} className={`flex flex-col items-center gap-1 ${mobileTab === 'player' ? 'text-pink-400' : 'text-zinc-500'}`}>
-           <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
-           <span className="text-[10px] font-bold uppercase tracking-wider">Player</span>
-        </button>
-        <button onClick={() => setMobileTab('search')} className={`flex flex-col items-center gap-1 ${mobileTab === 'search' ? 'text-pink-400' : 'text-zinc-500'}`}>
-           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-           <span className="text-[10px] font-bold uppercase tracking-wider">Search</span>
-        </button>
-        <button onClick={() => setMobileTab('extras')} className={`flex flex-col items-center gap-1 ${mobileTab === 'extras' ? 'text-pink-400' : 'text-zinc-500'}`}>
-           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-           <span className="text-[10px] font-bold uppercase tracking-wider">Extras</span>
-        </button>
-        <button onClick={() => setMobileTab('chat')} className={`flex flex-col items-center gap-1 ${mobileTab === 'chat' ? 'text-pink-400' : 'text-zinc-500'}`}>
-           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
-           <span className="text-[10px] font-bold uppercase tracking-wider">Chat</span>
-        </button>
-      </nav>
+          {/* Mobile Layout with Animated Transitions */}
+          <div className="lg:hidden h-full">
+            <AnimatePresence initial={false} custom={direction} mode="wait">
+              <motion.div
+                key={mobileTab}
+                custom={direction}
+                variants={tabVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                className="h-full flex flex-col"
+              >
+                {mobileTab === 'player' && (
+                  <div className="flex flex-col gap-4 overflow-y-auto pb-20 custom-scrollbar">
+                    <MemoizedRoomPlayer isHost={state?.isHost} username={state?.username} />
+                  </div>
+                )}
+                {mobileTab === 'search' && (
+                  <div className="flex-1 pb-20">
+                    <MemoizedMusicSearch />
+                  </div>
+                )}
+                {mobileTab === 'extras' && (
+                  <div className="flex-1 overflow-y-auto pb-20 custom-scrollbar">
+                    <MemoizedCoupleFeatures username={state?.username} />
+                  </div>
+                )}
+                {mobileTab === 'chat' && (
+                  <div className="flex-1 bg-black/20 rounded-3xl border border-white/5 backdrop-blur-md overflow-hidden pb-20">
+                    <MemoizedChat username={state?.username} />
+                  </div>
+                )}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </main>
+
+        <nav className="lg:hidden fixed bottom-0 left-0 w-full bg-black/80 backdrop-blur-xl border-t border-white/10 flex justify-around items-center p-2 z-50 pb-6">
+          {[
+            { id: 'player', label: 'Player', icon: <svg className="w-5 h-5 md:w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg> },
+            { id: 'search', label: 'Search', icon: <svg className="w-5 h-5 md:w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg> },
+            { id: 'extras', label: 'Vibes', icon: <svg className="w-5 h-5 md:w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> },
+            { id: 'chat', label: 'Chat', icon: <svg className="w-5 h-5 md:w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> }
+          ].map(tab => (
+            <motion.button 
+              key={tab.id}
+              whileTap={{ scale: 0.8 }}
+              onClick={() => handleTabChange(tab.id)} 
+              className={`flex flex-col items-center gap-1 flex-1 py-1 transition-colors ${mobileTab === tab.id ? 'text-pink-400' : 'text-zinc-500'}`}
+            >
+              {tab.icon}
+              <span className={`text-[9px] font-black uppercase tracking-widest ${mobileTab === tab.id ? 'opacity-100' : 'opacity-60'}`}>{tab.label}</span>
+              {mobileTab === tab.id && <motion.div layoutId="activeTab" className="w-1 h-1 bg-pink-400 rounded-full mt-0.5" />}
+            </motion.button>
+          ))}
+        </nav>
       </div>
     </div>
   );

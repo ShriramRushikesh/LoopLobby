@@ -1,20 +1,21 @@
-import React, { useRef, useCallback } from 'react';
+import React, { useRef, useCallback, memo } from 'react';
 import { Play, Pause, SkipForward, SkipBack, Music } from 'lucide-react';
 import { useRoomStore } from '../store/useRoomStore';
 import { useParams } from 'react-router-dom';
 import SongLyrics from './SongLyrics';
 import { audioEngine } from './GlobalAudioPlayer';
+import { motion } from 'framer-motion';
 
-export default function RoomPlayer({ isHost }) {
+const RoomPlayer = ({ isHost }) => {
   const { id: roomId } = useParams();
-  const {
-    room,
-    socket,
-    currentSong,
-    isPlaying,
-    progress,
-    setIsPlaying,
-  } = useRoomStore();
+  
+  // Zustand selectors for targeted re-renders
+  const socket = useRoomStore(s => s.socket);
+  const currentSong = useRoomStore(s => s.currentSong);
+  const isPlaying = useRoomStore(s => s.isPlaying);
+  const setIsPlaying = useRoomStore(s => s.setIsPlaying);
+  const progress = useRoomStore(s => s.progress);
+  const queue = useRoomStore(s => s.queue);
 
   const hasSong = !!currentSong;
   const duration = currentSong?.durationMs ? currentSong.durationMs / 1000 : 0;
@@ -45,13 +46,13 @@ export default function RoomPlayer({ isHost }) {
       setIsPlaying(true);
       socket.emit('play', { roomId, currentTime: progress });
     }
-  }, [isPlaying, currentSong, socket, roomId, progress]);
+  }, [isPlaying, currentSong, socket, roomId, progress, setIsPlaying]);
 
   const playNext = useCallback(() => {
-    if (room?.queue?.length > 0 && socket) {
-      socket.emit('change-song', { roomId, song: room.queue[0] });
+    if (queue?.length > 0 && socket) {
+      socket.emit('change-song', { roomId, song: queue[0] });
     }
-  }, [room?.queue, socket, roomId]);
+  }, [queue, socket, roomId]);
 
   const playPrevious = useCallback(() => {
     if (socket) {
@@ -72,101 +73,147 @@ export default function RoomPlayer({ isHost }) {
   const pct = duration > 0 ? (displayProgress / duration) * 100 : 0;
 
   return (
-    <div className="bg-black/40 rounded-3xl border border-white/10 backdrop-blur-xl p-6 relative overflow-hidden flex flex-col">
-
+    <div className="bg-black/40 rounded-[2rem] border border-white/10 backdrop-blur-2xl p-4 sm:p-6 lg:p-8 relative overflow-hidden flex flex-col shadow-2xl">
       {/* Background blur of album art */}
-      <div className="absolute inset-0 bg-gradient-to-br from-zinc-800 to-zinc-900 opacity-50" />
       {hasSong && currentSong.thumbnail && (
-        <div
-          className="absolute inset-0 bg-cover bg-center opacity-20 blur-3xl pointer-events-none"
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0.25 }}
+          className="absolute inset-0 bg-cover bg-center blur-3xl pointer-events-none scale-110"
           style={{ backgroundImage: `url(${currentSong.thumbnail})` }}
         />
       )}
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/60 pointer-events-none" />
 
       <div className="relative z-10 flex flex-col md:flex-row gap-6 md:gap-10 items-center md:items-start w-full">
         {/* Album Art */}
-        <div className="w-48 h-48 sm:w-64 sm:h-64 rounded-2xl bg-zinc-800 shadow-2xl overflow-hidden flex-shrink-0 relative group">
+        <motion.div 
+          layoutId="album-art"
+          className="w-40 h-40 sm:w-56 sm:h-56 lg:w-64 lg:h-64 rounded-3xl bg-zinc-800 shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden flex-shrink-0 relative group"
+        >
           {hasSong && currentSong.thumbnail ? (
-            <img src={currentSong.thumbnail} alt="thumbnail" className="w-full h-full object-cover" />
+            <img src={currentSong.thumbnail} alt="thumbnail" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-purple-800 to-pink-900 flex items-center justify-center">
-              <Music className="w-24 h-24 text-white/30" />
+            <div className="w-full h-full bg-gradient-to-br from-purple-800/50 to-pink-900/50 flex items-center justify-center">
+              <Music className="w-20 h-20 text-white/20" />
             </div>
           )}
           {isPlaying && (
-            <div className="absolute inset-0 border-4 border-pink-500/30 rounded-2xl heartbeat-pulse pointer-events-none" />
+            <div className="absolute inset-0 border-[3px] border-pink-500/40 rounded-3xl heartbeat-pulse pointer-events-none" />
           )}
-        </div>
+        </motion.div>
 
         {/* Track Info & Controls */}
-        <div className="flex-1 w-full space-y-6 flex flex-col justify-center">
+        <div className="flex-1 w-full space-y-4 sm:space-y-6 flex flex-col justify-center">
           <div className="text-center md:text-left">
-            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2 leading-tight line-clamp-2">
-              {currentSong?.title || 'Nothing playing'}
-            </h2>
-            <p className="text-zinc-400 text-lg line-clamp-1">{currentSong?.artist || 'Search and play a song'}</p>
+            <motion.h2 
+              initial={{ y: 10, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              key={currentSong?.title}
+              className="text-xl sm:text-2xl lg:text-3xl font-black text-white mb-1 md:mb-2 leading-tight line-clamp-2 drop-shadow-lg"
+            >
+              {currentSong?.title || 'Ready to Vibe?'}
+            </motion.h2>
+            <p className="text-pink-400/80 text-sm sm:text-lg font-medium line-clamp-1 tracking-wide">
+              {currentSong?.artist || 'Search for your favorite track'}
+            </p>
           </div>
 
-          {/* Progress Bar — fires only on release */}
-          <div className="space-y-2">
-            <div className="relative h-3 w-full bg-white/10 rounded-full overflow-hidden flex items-center cursor-pointer">
-              <div
-                className="absolute left-0 h-full bg-gradient-to-r from-pink-500 to-purple-500 rounded-full pointer-events-none transition-none"
-                style={{ width: `${pct}%` }}
-              />
-              <input
-                type="range"
-                min={0}
-                max={duration || 100}
-                step={0.5}
-                defaultValue={0}
-                onMouseDown={handleSeekStart}
-                onTouchStart={handleSeekStart}
-                onChange={handleSeekMove}
-                onMouseUp={handleSeekEnd}
-                onTouchEnd={handleSeekEnd}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                disabled={!hasSong}
-              />
+          {/* Progress Bar */}
+          <div className="space-y-3">
+            <div 
+              id="seek-track"
+              className="relative h-3 w-full bg-white/5 rounded-full flex items-center group/seek touch-none select-none"
+              onPointerDown={(e) => {
+                if (!hasSong) return;
+                const rect = e.currentTarget.getBoundingClientRect();
+                const seekTo = ((e.clientX - rect.left) / rect.width) * duration;
+                seekValueRef.current = Math.min(Math.max(0, seekTo), duration);
+                handleSeekStart();
+                handleSeekEnd(); // trigger immediate seek on click
+              }}
+            >
+              {/* Track Background */}
+              <div className="absolute inset-0 bg-white/5 rounded-full overflow-hidden">
+                <motion.div
+                  className="h-full bg-gradient-to-r from-pink-500 via-purple-500 to-pink-500"
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+
+              {/* Draggable Thumb (Point) */}
+              <motion.div
+                className="absolute w-5 h-5 bg-white rounded-full shadow-[0_0_15px_rgba(255,255,255,0.5)] border-2 border-pink-500 flex items-center justify-center cursor-grab active:cursor-grabbing z-20"
+                style={{ left: `calc(${pct}% - 10px)` }}
+                drag="x"
+                dragConstraints={{ left: 0, right: 0 }} // Constraints are tricky with relative %, we handle logic in onDrag
+                dragElastic={0}
+                dragMomentum={false}
+                onDragStart={handleSeekStart}
+                onDrag={(e, info) => {
+                  const track = document.getElementById('seek-track');
+                  if (!track) return;
+                  const rect = track.getBoundingClientRect();
+                  const newX = Math.min(Math.max(0, info.point.x - rect.left), rect.width);
+                  const seekTo = (newX / rect.width) * duration;
+                  seekValueRef.current = seekTo;
+                  handleSeekMove({ target: { value: seekTo } });
+                }}
+                onDragEnd={handleSeekEnd}
+                whileHover={{ scale: 1.2 }}
+                whileTap={{ scale: 0.9, boxShadow: '0 0 20px rgba(236,72,153,0.8)' }}
+              >
+                <div className="w-1.5 h-1.5 bg-pink-500 rounded-full animate-pulse" />
+              </motion.div>
+
+              {/* Invisible touch expander */}
+              <div className="absolute inset-x-0 -inset-y-3 z-10 cursor-pointer" />
             </div>
-            <div className="flex justify-between text-xs font-medium text-zinc-500">
-              <span>{formatTime(displayProgress)}</span>
-              <span>{currentSong?.durationText || formatTime(duration) || '0:00'}</span>
+            <div className="flex justify-between text-[10px] sm:text-xs font-bold text-zinc-500 tracking-tighter">
+              <span className="bg-black/30 px-2 py-0.5 rounded-md border border-white/5">{formatTime(displayProgress)}</span>
+              <span className="bg-black/30 px-2 py-0.5 rounded-md border border-white/5">{currentSong?.durationText || formatTime(duration) || '0:00'}</span>
             </div>
           </div>
 
           {/* Controls */}
-          <div className="flex items-center justify-center md:justify-start gap-6 mt-4 md:mt-6">
-            <button
+          <div className="flex items-center justify-center md:justify-start gap-5 sm:gap-8 mt-2 md:mt-4">
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
               onClick={playPrevious}
-              className="text-zinc-400 hover:text-white transition"
+              className="text-zinc-400 hover:text-white transition-colors"
               disabled={!hasSong}
             >
-              <SkipBack className={`w-8 h-8 fill-current ${!hasSong && 'opacity-50'}`} />
-            </button>
+              <SkipBack className={`w-7 h-7 sm:w-8 sm:h-8 fill-current ${!hasSong && 'opacity-30'}`} />
+            </motion.button>
 
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05, shadow: '0 0 20px rgba(236,72,153,0.3)' }}
+              whileTap={{ scale: 0.95 }}
               onClick={togglePlay}
               disabled={!hasSong}
-              className={`w-16 h-16 rounded-full flex items-center justify-center shadow-xl transition-all ${
+              className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center shadow-2xl transition-all border-2 ${
                 hasSong
-                  ? 'bg-white text-black hover:scale-105 active:scale-95 cursor-pointer'
-                  : 'bg-white/20 text-white/50 cursor-not-allowed'
+                  ? 'bg-white text-black border-transparent'
+                  : 'bg-white/5 text-white/20 border-white/10'
               }`}
             >
-              {isPlaying ? <Pause className="w-8 h-8 fill-current" /> : <Play className="w-8 h-8 fill-current ml-1" />}
-            </button>
+              {isPlaying ? <Pause className="w-6 h-6 sm:w-8 sm:h-8 fill-current" /> : <Play className="w-6 h-6 sm:w-8 sm:h-8 fill-current ml-1" />}
+            </motion.button>
 
-            <button
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
               onClick={playNext}
-              className="text-zinc-400 hover:text-white transition hover:scale-110 active:scale-95 cursor-pointer"
-              disabled={!hasSong || !room?.queue?.length}
+              className="text-zinc-400 hover:text-white transition-colors"
+              disabled={!hasSong || !queue?.length}
             >
-              <SkipForward className={`w-8 h-8 fill-current ${(!hasSong || !room?.queue?.length) && 'opacity-50'}`} />
-            </button>
+              <SkipForward className={`w-7 h-7 sm:w-8 sm:h-8 fill-current ${(!hasSong || !queue?.length) && 'opacity-30'}`} />
+            </motion.button>
 
-            <div className="ml-auto hidden sm:flex items-center gap-2 px-3 py-1.5 bg-red-500/10 border border-red-500/20 rounded-full text-red-400 text-xs font-bold tracking-wide">
-              <span>SYNC HI-FI</span>
+            <div className="ml-auto hidden xl:flex items-center gap-2 px-3 py-1.5 bg-pink-500/10 border border-pink-500/20 rounded-full text-pink-400 text-[10px] font-black tracking-[0.2em] uppercase">
+              <div className="w-1.5 h-1.5 bg-pink-500 rounded-full animate-pulse" />
+              <span>Crystal Sync</span>
             </div>
           </div>
         </div>
@@ -175,4 +222,6 @@ export default function RoomPlayer({ isHost }) {
       {currentSong && <SongLyrics currentSong={currentSong} />}
     </div>
   );
-}
+};
+
+export default memo(RoomPlayer);

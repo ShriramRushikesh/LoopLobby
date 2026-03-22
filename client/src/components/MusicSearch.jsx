@@ -27,10 +27,23 @@ const SongItem = memo(({ song, isQueue, onPlay, onAdd, onToggleFav, isFav }) => 
 ));
 
 export default function MusicSearch() {
-  const { room, socket } = useRoomStore();
+  const socket = useRoomStore(s => s.socket);
+  const roomId = useRoomStore(s => s.room?.roomId);
+  const queueLength = useRoomStore(s => s.room?.queue?.length);
+  const favorites = useRoomStore(s => s.room?.favorites);
+  const queue = useRoomStore(s => s.room?.queue);
+
   const [query, setQuery] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('search');
+
+  // Debounced search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchTerm(query.trim());
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [query]);
 
   const { data: results = [], isLoading: loading } = useQuery({
     queryKey: ['music-search', searchTerm],
@@ -49,25 +62,23 @@ export default function MusicSearch() {
   };
 
   const playSong = (song) => {
-    const roomId = room?.roomId;
     if (!roomId || !socket) return;
     socket.emit('change-song', { roomId, song });
   };
 
   const addToQueue = (song) => {
-    if (!room?.roomId || !socket) return;
+    if (!roomId || !socket) return;
     // Server handler listens for bare `song` argument
     socket.emit('add_to_queue', song);
   };
 
   const toggleFavorite = (song) => {
-    const roomId = room?.roomId;
     if (!roomId || !socket) return;
     socket.emit('toggle_favorite', { roomId, song });
   };
 
   const isFavorite = (videoId) => {
-    return room?.favorites?.some(s => s.videoId === videoId);
+    return favorites?.some(s => s.videoId === videoId);
   };
 
   return (
@@ -83,7 +94,7 @@ export default function MusicSearch() {
           onClick={() => setActiveTab('queue')}
           className={`text-sm font-medium transition-colors ${activeTab === 'queue' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
         >
-          <div className="flex items-center gap-2"><ListMusic className="w-4 h-4"/> Queue {room?.queue?.length > 0 && `(${room.queue.length})`}</div>
+          <div className="flex items-center gap-2"><ListMusic className="w-4 h-4"/> Queue {queueLength > 0 && `(${queueLength})`}</div>
         </button>
         <button 
           onClick={() => setActiveTab('favorites')}
@@ -135,8 +146,8 @@ export default function MusicSearch() {
 
         {activeTab === 'queue' && (
           <div className="space-y-1">
-            {room?.queue?.length > 0 ? (
-              room.queue.map(song => (
+            {queue?.length > 0 ? (
+              queue.map(song => (
                 <SongItem 
                   key={song.videoId + Math.random()} 
                   song={song} 
@@ -157,8 +168,8 @@ export default function MusicSearch() {
 
         {activeTab === 'favorites' && (
           <div className="space-y-1">
-            {room?.favorites?.length > 0 ? (
-              room.favorites.map(song => (
+            {favorites?.length > 0 ? (
+              favorites.map(song => (
                 <SongItem 
                   key={song.videoId} 
                   song={song} 
