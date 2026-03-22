@@ -32,14 +32,13 @@ A full-stack synchronized music listening platform optimized for couples.
      ```bash
      docker-compose up -d
      ```
-   - Start Backend:
+   - Start Both (Recommended):
      ```bash
-     cd server && npm run dev
+     npm run dev
      ```
-   - Start Frontend:
-     ```bash
-     cd client && npm run dev
-     ```
+   - *Alternative (Manual)*:
+     - Start Backend: `cd server && npm run dev`
+     - Start Frontend: `cd client && npm run dev`
 
 ## Deployment
 - **Frontend**: Deploy `client` folder to Vercel. Ensure build command is `npm run build` and output directory is `dist`. Set `VITE_API_URL` to your deployed backend URL.
