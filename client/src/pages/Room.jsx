@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, memo } from 'react';
+import React, { useEffect, useState, useRef, useMemo, memo } from 'react';
 import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import { useRoomStore } from '../store/useRoomStore';
@@ -48,8 +48,15 @@ export default function Room() {
   const [isShaking, setIsShaking] = useState(false);
   const [copied, setCopied] = useState(false);
   const [mobileTab, setMobileTab] = useState('player');
+  const mobileTabRef = useRef(mobileTab);
   const [hasEntered, setHasEntered] = useState(false);
   const [lastNotify, setLastNotify] = useState(null);
+  const [direction, setDirection] = useState(0);
+
+  // Sync ref with state for the socket listener to use without re-binding
+  useEffect(() => {
+    mobileTabRef.current = mobileTab;
+  }, [mobileTab]);
 
   const enterRoom = () => {
     setHasEntered(true);
@@ -95,7 +102,7 @@ export default function Room() {
         setLastNotify({ user: msg.user, text: msg.text });
         setTimeout(() => setLastNotify(null), 3000);
         // Increment unread count if not on chat tab
-        if (mobileTab !== 'chat') {
+        if (mobileTabRef.current !== 'chat') {
           incrementUnreadChatCount();
         }
       }
@@ -115,7 +122,7 @@ export default function Room() {
     });
 
     return () => newSocket.disconnect();
-  }, [id, state, navigate, setSocket, setRoom, setMoodMode, updateRoomQueue, updateRoomFavorites, updateCurrentSong, updateSongProgress, addChatMessage, addLoveNote, addVirtualGift, addEmoji, setTyping]);
+  }, [id, state, navigate, setSocket, setRoom, setMoodMode, updateRoomQueue, updateRoomFavorites, updateCurrentSong, updateSongProgress, addChatMessage, addLoveNote, addVirtualGift, addEmoji, setTyping, incrementUnreadChatCount]);
 
   const shareToWhatsApp = () => {
     const text = `Join my RuRu Sync Room to vibing together! ❤️🎵\nLink: ${window.location.href}`;
@@ -145,7 +152,6 @@ export default function Room() {
   };
 
   const tabIndex = { player: 0, search: 1, extras: 2, chat: 3 };
-  const [direction, setDirection] = useState(0);
 
   const handleTabChange = (newTab) => {
     setDirection(tabIndex[newTab] > tabIndex[mobileTab] ? 1 : -1);
