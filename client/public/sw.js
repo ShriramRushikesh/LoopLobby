@@ -1,5 +1,5 @@
 // v2 — bumped to force-clear old cache that had stale index.html with wrong asset hashes
-const CACHE_NAME = 'ruru-cache-v2';
+const CACHE_NAME = 'looplobby-cache-v1';
 
 // NOTE: Do NOT cache index.html — it embeds hashed asset URLs that change on every build
 const PRECACHE_ASSETS = [

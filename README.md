@@ -1,4 +1,4 @@
-# Groic Music Room Clone
+# LoopLobby Sync - Synchronize Your Vibes 🎵🕊️
 
 A full-stack synchronized music listening platform optimized for couples.
 

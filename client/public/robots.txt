@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://ruru-sync.vercel.app/sitemap.xml
+Sitemap: https://looplobby.vercel.app/sitemap.xml

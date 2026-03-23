@@ -8,7 +8,7 @@ export default function Logo({ className = "w-32 h-auto text-white" }) {
       xmlns="http://www.w3.org/2000/svg" 
       className={className}
     >
-      {/* "RuRu" Main Text */}
+      {/* "LoopLobby" Main Text */}
       <text 
         x="10" 
         y="55" 
@@ -17,7 +17,7 @@ export default function Logo({ className = "w-32 h-auto text-white" }) {
         fontSize="54" 
         letterSpacing="-3"
       >
-        RuRu
+        LoopLobby
       </text>
       
       {/* "sync vibes" Subtitle */}

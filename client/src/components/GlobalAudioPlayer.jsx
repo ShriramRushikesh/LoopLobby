@@ -191,7 +191,7 @@ export default function GlobalAudioPlayer() {
   useEffect(() => {
     if (!('mediaSession' in navigator) || !currentSong) return;
     navigator.mediaSession.metadata = new MediaMetadata({
-      title: currentSong.title, artist: currentSong.artist || 'RuRu Sync',
+      title: currentSong.title, artist: currentSong.artist || 'LoopLobby Sync',
       artwork: [{ src: currentSong.thumbnail, sizes: '512x512', type: 'image/png' }],
     });
     navigator.mediaSession.setActionHandler('play', () => { audioEngine.play(); setIsPlaying(true); socket?.emit('play', { roomId, currentTime: _p.ref?.getCurrentTime() || 0 }); });
