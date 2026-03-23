@@ -3,18 +3,18 @@ import React from 'react';
 export default function Logo({ className = "w-32 h-auto text-white" }) {
   return (
     <svg 
-      viewBox="0 0 280 85" 
+      viewBox="0 0 200 80" 
       fill="currentColor" 
       xmlns="http://www.w3.org/2000/svg" 
       className={className}
     >
       {/* "LoopLobby" Main Text */}
       <text 
-        x="5" 
+        x="10" 
         y="50" 
-        fontFamily="sans-serif" 
+        fontFamily="Arial, sans-serif" 
         fontWeight="900" 
-        fontSize="48" 
+        fontSize="52" 
         letterSpacing="-2"
       >
         LoopLobby
@@ -22,12 +22,12 @@ export default function Logo({ className = "w-32 h-auto text-white" }) {
       
       {/* "sync vibes" Subtitle */}
       <text 
-        x="60" 
+        x="12" 
         y="75" 
-        fontFamily="sans-serif" 
+        fontFamily="Arial, sans-serif" 
         fontWeight="800" 
         fontSize="16" 
-        letterSpacing="-0.5"
+        letterSpacing="-1"
       >
         sync vibes
       </text>

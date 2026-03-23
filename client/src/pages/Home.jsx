@@ -35,21 +35,21 @@ export default function Home() {
         animate={{ y: 0, opacity: 1 }}
         className="w-full max-w-md relative z-10"
       >
-        <div className="text-center mb-8 relative">
-          {/* Indian Pride & Tagline */}
-          <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-1.5 rounded-full mb-6 backdrop-blur-md">
-            <Sparkles className="w-3.5 h-3.5 text-pink-400" />
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">"One Vibe. One Sync."</span>
-            <span className="text-white/20 mx-1">|</span>
-            <span className="text-[10px] font-black uppercase tracking-widest text-[#FF9933] flex items-center gap-1">
+        <div className="text-center mb-10 relative">
+          {/* Indian Pride & Header Thought */}
+          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500/5 via-white/5 to-green-500/5 border border-white/10 px-5 py-2.5 rounded-full mb-8 backdrop-blur-xl shadow-2xl scale-105">
+            <span className="text-sm italic text-zinc-400 font-medium">✨ "One Vibe. One Sync."</span>
+            <span className="text-zinc-800 mx-2">|</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-white flex items-center gap-2 group cursor-default">
               Made in Solapur 🇮🇳
             </span>
           </div>
 
-          <div className="flex justify-center mb-4">
-            <Logo className="w-64 h-auto text-pink-500 drop-shadow-[0_0_20px_rgba(236,72,153,0.4)]" />
+          <div className="flex justify-center mb-6">
+            <h1 className="sr-only">LoopLobby | sync vibes everywhere</h1>
+            <Logo className="w-56 h-auto text-pink-500 drop-shadow-[0_0_15px_rgba(236,72,153,0.5)]" />
           </div>
-          <p className="text-zinc-500 text-sm md:text-base font-medium tracking-wide">
+          <p className="text-zinc-400 text-lg mb-2 max-w-md mx-auto font-medium">
             Sync your soul with LoopLobby.
           </p>
         </div>
