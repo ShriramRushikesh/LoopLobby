@@ -113,11 +113,11 @@ export default function Home() {
         className="absolute bottom-6 text-center w-full left-0 space-y-2 px-4"
       >
         <div className="text-zinc-500 text-sm font-medium">
-          Made with <Heart className="inline-block w-4 h-4 text-pink-500 mx-1 animate-pulse" /> for <span className="text-zinc-300">Paroo</span>, by <span className="text-zinc-300">Rushi</span>
+          Made with <Heart className="inline-block w-4 h-4 text-pink-500 mx-1 animate-pulse" /> for <span className="text-zinc-300">shreya</span>, by <span className="text-zinc-300">Rushi</span>
         </div>
         <p className="text-[10px] text-zinc-600 max-w-lg mx-auto leading-relaxed">
-          LoopLobby is a personal synchronization tool. We do not host, store, or distribute any copyrighted music content. 
-          All audio is streamed directly from public third-party APIs. Please respect the copyright of the content creators 
+          LoopLobby is a personal synchronization tool. We do not host, store, or distribute any copyrighted music content.
+          All audio is streamed directly from public third-party APIs. Please respect the copyright of the content creators
           and comply with your local government regulations.
         </p>
       </motion.div>
