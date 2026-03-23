@@ -68,7 +68,7 @@ export default function RoomPlayer({ isHost, compact = false }) {
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
-  const displayProgress = seekingRef.current ? seekValueRef.current : (isAudible ? progress : 0);
+  const displayProgress = seekingRef.current ? seekValueRef.current : progress;
   const pct = duration > 0 ? (displayProgress / duration) * 100 : 0;
 
   if (compact) {

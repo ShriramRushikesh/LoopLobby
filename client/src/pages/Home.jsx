@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Music, Heart, Users, Share2, Sparkles, Wand2 } from 'lucide-react';
-import { motion } from 'framer-motion';
 import Logo from '../components/Logo';
 import AdBanner from '../components/AdBanner';
 

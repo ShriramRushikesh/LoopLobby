@@ -61,8 +61,17 @@ export default function Room() {
     
     newSocket.on('queue_updated', updateRoomQueue);
     newSocket.on('favorites_updated', updateRoomFavorites);
-    newSocket.on('sync_player', updateCurrentSong);
-    newSocket.on('sync_progress', updateSongProgress);
+    
+    // Playback state is primarily handled by GlobalAudioPlayer for the 'AntiGravity' engine,
+    // but we listen here to keep the store in sync for UI components.
+    newSocket.on('sync-song', (data) => {
+      const song = data?.videoId ? data : data?.song;
+      if (song) updateCurrentSong(song);
+    });
+    newSocket.on('sync-state', (state) => {
+      if (state.song) updateCurrentSong(state.song);
+      updateSongProgress(state.currentTime);
+    });
     
     newSocket.on('receive_message', addChatMessage);
     newSocket.on('receive_love_note', addLoveNote);
@@ -80,7 +89,7 @@ export default function Room() {
     });
 
     return () => newSocket.disconnect();
-  }, [id, state, navigate]);
+  }, [id, state, navigate, setSocket, setRoom, setMoodMode, updateRoomQueue, updateRoomFavorites, updateCurrentSong, updateSongProgress, addChatMessage, addLoveNote, addVirtualGift, addEmoji, setTyping]);
 
   const shareToWhatsApp = () => {
     const text = `Join my LoopLobby Sync Room to vibing together! ❤️🎵\nLink: ${window.location.href}`;
