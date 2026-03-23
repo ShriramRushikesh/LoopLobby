@@ -35,13 +35,22 @@ export default function Home() {
         animate={{ y: 0, opacity: 1 }}
         className="w-full max-w-md relative z-10"
       >
-        <div className="text-center mb-8 relative">
+        <div className="text-center mb-10 relative">
+          {/* Indian Pride & Header Thought */}
+          <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-full mb-8 backdrop-blur-md">
+            <span className="text-sm italic text-zinc-400 font-medium">✨ "One Vibe. One Sync."</span>
+            <span className="text-zinc-700 mx-2">|</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-white flex items-center gap-1.5 focus:outline-none">
+              Made in Solapur 🇮🇳
+            </span>
+          </div>
+
           <div className="flex justify-center mb-6">
             <h1 className="sr-only">LoopLobby | sync vibes everywhere</h1>
             <Logo className="w-56 h-auto text-pink-500 drop-shadow-[0_0_15px_rgba(236,72,153,0.5)]" />
           </div>
-          <p className="text-zinc-400 text-lg mb-8 max-w-md mx-auto">
-            LoopLobby | Synchronize vibes everywhere. Connect, listen, and feel the music together.
+          <p className="text-zinc-400 text-lg mb-2 max-w-md mx-auto font-medium">
+            Sync your soul with LoopLobby.
           </p>
         </div>
 

@@ -20,13 +20,17 @@ export default function About() {
 
         <section className="grid md:grid-cols-2 gap-8">
           <div className="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl hover:border-pink-500/50 transition-colors">
-            <Heart className="w-8 h-8 text-pink-400 mb-4" />
-            <h3 className="text-xl font-semibold mb-2">Our Mission</h3>
-            <p className="text-zinc-400 leading-relaxed">
-              LoopLobby was born out of a simple need: to listen to music together, even when miles apart. 
-              We believe music is better shared, and our mission is to provide a seamless, high-quality 
-              synchronization space for couples and friends worldwide.
-            </p>
+            <div className="space-y-4">
+              <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-1.5 rounded-full mb-4">
+                <span className="text-sm">🇮🇳</span>
+                <span className="text-xs font-bold uppercase tracking-widest text-zinc-400">Made in India | Solapur Pride</span>
+              </div>
+              <h1 className="text-4xl font-black tracking-tighter text-white sm:text-5xl">Our Mission</h1>
+              <p className="text-zinc-400 text-lg leading-relaxed">
+                LoopLobby was born in Solapur, India, with a single goal: to bridge the gap between people through the universal language of music. 
+                Built with the spirit of Digital India, we provide a seamless, synchronized audio experience that brings friends and families closer, no matter the distance.
+              </p>
+            </div>
           </div>
 
           <div className="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl hover:border-purple-500/50 transition-colors">

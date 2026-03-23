@@ -27,8 +27,12 @@ export default function Footer() {
           <Link to="/terms" className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">Terms</Link>
         </nav>
 
-        <div className="text-zinc-500 text-xs font-medium">
-          &copy; {new Date().getFullYear()} LoopLobby. Designed in India.
+        <div className="flex flex-col items-center md:items-end gap-2 text-zinc-500 text-[10px] font-bold tracking-widest uppercase">
+          <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-full border border-white/5">
+            <span className="text-sm">🇮🇳</span>
+            <span>Made in Solapur, India</span>
+          </div>
+          <p className="opacity-50">&copy; {new Date().getFullYear()} LoopLobby</p>
         </div>
       </div>
     </footer>
