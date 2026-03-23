@@ -71,94 +71,26 @@ export default function MusicSearch() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-black/40 rounded-3xl border border-white/10 backdrop-blur-xl overflow-hidden">
-      <div className="flex gap-4 p-4 border-b border-white/5 bg-black/20">
-        <button 
-          onClick={() => setActiveTab('search')}
-          className={`text-sm font-medium transition-colors ${activeTab === 'search' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
-        >
-          <div className="flex items-center gap-2"><Search className="w-4 h-4"/> Search</div>
-        </button>
-        <button 
-          onClick={() => setActiveTab('queue')}
-          className={`text-sm font-medium transition-colors ${activeTab === 'queue' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
-        >
-          <div className="flex items-center gap-2"><ListMusic className="w-4 h-4"/> Queue {room?.queue?.length > 0 && `(${room.queue.length})`}</div>
-        </button>
-        <button 
-          onClick={() => setActiveTab('favorites')}
-          className={`text-sm font-medium transition-colors ${activeTab === 'favorites' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
-        >
-          <div className="flex items-center gap-2"><Heart className="w-4 h-4"/> Favs</div>
-        </button>
-      </div>
-
       <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-        {activeTab === 'search' && (
-          <div className="space-y-4">
-            <form onSubmit={handleSearch} className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-              <input 
-                type="text" 
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search songs on YouTube..." 
-                className="w-full bg-black/50 border border-white/10 rounded-full py-2 pl-10 pr-4 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-pink-500/50 transition-colors"
-              />
-            </form>
-            
-            <div className="space-y-1">
-              {loading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="w-6 h-6 text-pink-500 animate-spin" />
-                </div>
-              ) : results.length > 0 ? (
-                results.map(song => (
-                  <SongItem 
-                    key={song.videoId} 
-                    song={song} 
-                    onPlay={playSong} 
-                    onAdd={addToQueue} 
-                    onToggleFav={toggleFavorite}
-                    isFav={isFavorite(song.videoId)}
-                  />
-                ))
-              ) : (
-                <div className="text-center py-12 text-zinc-500 flex flex-col items-center gap-3">
-                  <Music className="w-12 h-12 opacity-20" />
-                  <p className="text-sm">Search for a song to play</p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'queue' && (
+        <div className="space-y-4">
+          <form onSubmit={handleSearch} className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+            <input 
+              type="text" 
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search songs on YouTube..." 
+              className="w-full bg-black/50 border border-white/10 rounded-full py-2 pl-10 pr-4 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-pink-500/50 transition-colors"
+            />
+          </form>
+          
           <div className="space-y-1">
-            {room?.queue?.length > 0 ? (
-              room.queue.map(song => (
-                <SongItem 
-                  key={song.videoId + Math.random()} 
-                  song={song} 
-                  isQueue 
-                  onPlay={playSong} 
-                  onAdd={addToQueue} 
-                  onToggleFav={toggleFavorite}
-                  isFav={isFavorite(song.videoId)}
-                />
-              ))
-            ) : (
-              <div className="text-center py-12 text-zinc-500">
-                <p className="text-sm">Queue is empty</p>
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 text-pink-500 animate-spin" />
               </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'favorites' && (
-          <div className="space-y-1">
-            {room?.favorites?.length > 0 ? (
-              room.favorites.map(song => (
+            ) : results.length > 0 ? (
+              results.map(song => (
                 <SongItem 
                   key={song.videoId} 
                   song={song} 
@@ -168,14 +100,19 @@ export default function MusicSearch() {
                   isFav={isFavorite(song.videoId)}
                 />
               ))
+            ) : searchTerm ? (
+              <div className="text-center py-12 text-zinc-500 flex flex-col items-center gap-3">
+                <Music className="w-12 h-12 opacity-20" />
+                <p className="text-sm">No results found for "{searchTerm}"</p>
+              </div>
             ) : (
-              <div className="text-center py-12 text-zinc-500">
-                <p className="text-sm">No favorite songs yet</p>
+              <div className="text-center py-12 text-zinc-500 flex flex-col items-center gap-3">
+                <Music className="w-12 h-12 opacity-20" />
+                <p className="text-sm">Search for a song to play</p>
               </div>
             )}
           </div>
-        )}
+        </div>
       </div>
-    </div>
-  );
+    );
 }

@@ -8,7 +8,8 @@ const _s = { time: 0, at: 0, offset: 0 };
 let _raf = null;
 let _ticker = null;
 let _started = false;
-let _lastCorrection = 0; // throttle seek corrections
+let _lastCorrection = 0; 
+
 
 export const audioEngine = {
   play() {
@@ -44,9 +45,12 @@ export const audioEngine = {
 };
 
 function serverNow() { return Date.now() + _s.offset; }
-function expectedTime() {
-  if (!_s.at) return _s.time;
-  return _s.time + (serverNow() - _s.at) / 1000;
+function expectedTime(isPlayingRef) {
+  if (!isPlayingRef.current) return _s.time;
+  // Use server-synced time to calculate exact position
+  const now = Date.now() + _s.offset;
+  const elapsed = Math.max(0, (now - _s.at) / 1000);
+  return _s.time + elapsed;
 }
 
 function startEngine(setProgress, isPlayingRef) {
@@ -58,10 +62,10 @@ function startEngine(setProgress, isPlayingRef) {
     // Only correct at most once every 3 seconds — prevents seek-buffering stutter
     if (_p.ref && isPlayingRef.current && _s.at && (now - _lastCorrection > 3000)) {
       try {
-        const drift = _p.ref.getCurrentTime() - expectedTime();
+        const drift = _p.ref.getCurrentTime() - expectedTime(isPlayingRef);
         // Only seek if drift is significant (>500ms) — small drift self-corrects via playback rate
         if (Math.abs(drift) > 0.5) {
-          _p.ref.seekTo(expectedTime(), true);
+          _p.ref.seekTo(expectedTime(isPlayingRef), true);
           _lastCorrection = now;
         }
       } catch (_) {}
@@ -80,7 +84,7 @@ function startEngine(setProgress, isPlayingRef) {
 export default function GlobalAudioPlayer() {
   const {
     currentSong, isPlaying, volume,
-    setProgress, setIsPlaying, setCurrentSong, setLatency,
+    setProgress, setIsPlaying, setCurrentSong, setLatency, setDuration,
     socket, room, queue,
   } = useRoomStore();
 
@@ -99,22 +103,28 @@ export default function GlobalAudioPlayer() {
   }, []);
 
   // When `currentSong` changes → use loadVideoById if player is already ready (fast!)
-  // Otherwise let onPlayerReady handle it
   useEffect(() => {
-    const vid = currentSong?.videoId || currentSong?.id;
-    if (!vid || vid === prevVideoId.current) return;
-    prevVideoId.current = vid;
-
     if (_p.ref) {
-      // Player ALREADY loaded → instant song switch in same player, no remount
-      const startAt = Math.max(0, expectedTime());
-      _p.ref.loadVideoById({ videoId: vid, startSeconds: startAt });
-      if (_started) {
-        setTimeout(() => { try { _p.ref?.unMute(); _p.ref?.setVolume(volumeRef.current * 100); } catch (_) {} }, 200);
-      }
+      const wait = _started ? 0 : 500; 
+      setTimeout(() => {
+        const startAt = Math.max(0, expectedTime(isPlayingRef));
+        const vid = currentSong?.videoId || currentSong?.id;
+        if (!vid) return;
+
+        console.log(`[GlobalPlayer] Loading ${vid} at ${startAt}s`);
+        try {
+          _p.ref.loadVideoById({ videoId: vid, startSeconds: startAt });
+          if (_started) {
+            _p.ref.unMute(); 
+            _p.ref.setVolume(volumeRef.current * 100);
+            _p.ref.playVideo();
+          }
+        } catch (e) {
+          console.error("[GlobalPlayer] Load error:", e);
+        }
+      }, wait);
     }
-    // If player not ready yet, onPlayerReady will handle it
-  }, [currentSong?.videoId, currentSong?.id]);
+  }, [currentSong?.videoId, currentSong?.id, _started, isPlayingRef, updateCurrentSong]);
 
   // Latency
   useEffect(() => {
@@ -127,7 +137,7 @@ export default function GlobalAudioPlayer() {
     };
     socket.on('pong-sync', onPong);
     return () => { clearInterval(iv); socket.off('pong-sync', onPong); };
-  }, [socket]);
+  }, [socket, setLatency]);
 
   // Socket sync listeners
   useEffect(() => {
@@ -145,6 +155,20 @@ export default function GlobalAudioPlayer() {
       _s.at = serverTime || Date.now();
       setIsPlaying(false);
       try { _p.ref?.pauseVideo(); } catch (_) {}
+    };
+
+    const onSyncProgress = ({ currentTime, serverTime }) => {
+      _s.time = currentTime;
+      _s.at = serverTime || Date.now();
+      
+      const expected = expectedTime(isPlayingRef);
+      const actual = _p.ref?.getCurrentTime() || 0;
+      const off = expected - actual;
+      
+      // Tighten sync to 0.5s for "exact timing"
+      if (Math.abs(off) > 0.5) {
+        _p.ref?.seekTo(expected, true);
+      }
     };
 
     const onSyncSeek = ({ currentTime, serverTime }) => {
@@ -230,10 +254,12 @@ export default function GlobalAudioPlayer() {
   }, [queue, socket, roomId]);
 
   // Keep ONE YouTube instance alive forever — song changes use loadVideoById
+  if (!currentSong) return null;
+
   return (
     <div aria-hidden="true" style={{ position: 'fixed', bottom: 0, left: 0, width: 1, height: 1, opacity: 0.01, overflow: 'hidden', pointerEvents: 'none' }}>
       <YouTube
-        videoId={currentSong?.videoId || currentSong?.id || 'dQw4w9WgXcQ'}
+        videoId={currentSong?.videoId || currentSong?.id}
         opts={{
           width: '1', height: '1',
           playerVars: { 
