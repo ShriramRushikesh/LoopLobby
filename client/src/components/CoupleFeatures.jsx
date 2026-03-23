@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { useRoomStore } from '../store/useRoomStore';
 import { Heart, Send, Sparkles, Moon, Sun, Flame, Stars, Gift, Clock, Music } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -21,7 +21,7 @@ const COMPLIMENTS_DB = [
   "Listening with you is pure magic 🪄"
 ];
 
-export default function CoupleFeatures({ username }) {
+function CoupleFeatures({ username }) {
   const { socket, room, moodMode } = useRoomStore();
   const [noteMsg, setNoteMsg] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -69,108 +69,101 @@ export default function CoupleFeatures({ username }) {
     socket.emit('send_message', { text: `Sent a ${type}!`, isBlurred: false });
   };
 
-
-
   const saveMoment = () => {
     const song = room?.currentSong || { name: 'Current Vibe', artist: 'Unknown' };
     socket.emit('save_moment', { id: Date.now(), ...song });
   };
 
   return (
-    <div className="bg-black/20 rounded-3xl border border-pink-500/20 backdrop-blur-md p-6 overflow-hidden relative">
-      <div className="absolute top-0 right-0 p-4 opacity-50"><Heart className="w-32 h-32 text-pink-500 blur-3xl" /></div>
+    <div className="bg-black/20 rounded-3xl border border-pink-500/10 backdrop-blur-md p-4 overflow-hidden relative shadow-inner">
+      <div className="absolute top-0 right-0 p-2 opacity-30 pointer-events-none"><Heart className="w-24 h-24 text-pink-500 blur-2xl" /></div>
       
-      <h2 className="text-lg font-bold flex items-center gap-2 mb-6 text-pink-300 relative z-10">
-        <Sparkles className="w-5 h-5 text-pink-400" /> Couple Features
+      <h2 className="text-[10px] sm:text-xs font-black flex items-center gap-2 mb-4 text-pink-300 relative z-10 uppercase tracking-widest">
+        <Sparkles className="w-3.5 h-3.5 text-pink-400" /> Extras
       </h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
+      <div className="space-y-6 relative z-10">
         
-        {/* Mood Lighting */}
-        <div className="space-y-3">
-          <label className="text-sm font-medium text-zinc-400 uppercase tracking-wider">Mood Lighting</label>
-          <div className="flex flex-wrap gap-2">
-            {moods.map(m => {
-              const Icon = m.icon;
-              const isActive = moodMode === m.id;
-              return (
-                <button
-                  key={m.id}
-                  onClick={() => socket.emit('change_mood', m.id)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-all ${isActive ? 'bg-pink-500 text-white border-pink-400 shadow-lg shadow-pink-500/20' : 'bg-white/5 border-white/10 text-zinc-400 hover:bg-white/10'}`}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span className="text-sm font-medium">{m.label}</span>
-                </button>
-              );
-            })}
+        {/* Unified Tool Stack */}
+        <div className="space-y-6">
+          {/* Mood Lighting */}
+          <div className="space-y-3">
+            <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Atmosphere Control</label>
+            <div className="flex flex-wrap gap-2">
+              {moods.map(m => {
+                const Icon = m.icon;
+                const isActive = moodMode === m.id;
+                return (
+                  <button
+                    key={m.id}
+                    onClick={() => socket.emit('change_mood', m.id)}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-all text-xs font-black ${isActive ? 'bg-pink-500 text-white border-pink-400 shadow-xl shadow-pink-500/30 ring-2 ring-pink-500/20' : 'bg-white/5 border-white/5 text-zinc-400 hover:bg-white/10'}`}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    <span>{m.label}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
 
-        {/* Love Notes */}
-        <div className="space-y-3">
-          <label className="text-sm font-medium text-zinc-400 uppercase tracking-wider">Send a Love Note</label>
-          <form onSubmit={sendNote} className="flex gap-2">
-            <input
-              type="text"
-              value={noteMsg}
-              onChange={(e) => setNoteMsg(e.target.value)}
-              placeholder="You mean the world to me..."
-              className="flex-1 bg-black/40 border border-pink-500/30 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-pink-500 text-white"
-            />
-            <button type="submit" className="bg-pink-500 hover:bg-pink-400 text-white px-4 rounded-xl transition">
-              <Send className="w-4 h-4" />
-            </button>
-          </form>
-        </div>
+          {/* Love Notes & Actions */}
+          <div className="space-y-3">
+            <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Send Expressions</label>
+            <form onSubmit={sendNote} className="flex gap-2">
+              <input
+                type="text"
+                value={noteMsg}
+                onChange={(e) => setNoteMsg(e.target.value)}
+                placeholder="Whisper a note..."
+                className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-pink-500/50 text-white placeholder-zinc-800 transition-all shadow-inner"
+              />
+              <button type="submit" className="bg-pink-500 hover:bg-pink-400 text-white px-4 rounded-xl transition shadow-lg shadow-pink-500/20 active:scale-95">
+                <Send className="w-4 h-4" />
+              </button>
+            </form>
+          </div>
 
-        {/* Actions */}
-        <div className="space-y-3 md:col-span-2 pt-4 border-t border-white/10">
-          <label className="text-sm font-medium text-pink-400 uppercase tracking-wider flex items-center gap-2">
-             <Heart className="w-4 h-4" /> Playful Interactions
-          </label>
-          <div className="flex flex-wrap gap-3 mt-2">
-            <button onClick={generateCompliment} disabled={isGenerating} className="flex items-center justify-center gap-2 bg-purple-900/40 hover:bg-purple-800/60 border border-purple-500/50 text-purple-200 px-4 py-2.5 rounded-xl transition-all hover:scale-105 active:scale-95 shadow-lg shadow-purple-900/20 disabled:opacity-50 disabled:scale-100 flex-1 md:flex-none">
-              {isGenerating ? <div className="animate-spin text-white">⏳</div> : <Sparkles className="w-4 h-4 text-purple-300" />} 
-              {isGenerating ? 'Generating...' : 'AI Compliment'}
+          {/* Rapid Buttons */}
+          <div className="grid grid-cols-3 gap-3">
+            <button onClick={generateCompliment} disabled={isGenerating} className="flex flex-col items-center justify-center gap-2 bg-purple-900/40 hover:bg-purple-800/60 border border-purple-500/30 text-purple-200 p-4 rounded-2xl transition-all text-[10px] font-black uppercase tracking-widest disabled:opacity-50 shadow-lg shadow-purple-900/20">
+              {isGenerating ? <div className="animate-spin text-white">⏳</div> : <Sparkles className="w-5 h-5 text-purple-400" />} 
+              <span>Compliment</span>
             </button>
-            <button onClick={() => sendGift('heart')} className="flex items-center gap-2 bg-pink-900/40 hover:bg-pink-800/60 border border-pink-500/50 text-pink-200 px-4 py-2.5 rounded-xl transition-all hover:scale-105 active:scale-95 shadow-lg shadow-pink-900/20">
-              <Gift className="w-4 h-4" /> Send Virtual Hug
+            <button onClick={() => sendGift('heart')} className="flex flex-col items-center justify-center gap-2 bg-pink-900/40 hover:bg-pink-800/60 border border-pink-500/30 text-pink-200 p-4 rounded-2xl transition-all text-[10px] font-black uppercase tracking-widest shadow-lg shadow-pink-900/20">
+              <Gift className="w-5 h-5 text-pink-400" /> <span>Hug</span>
             </button>
-            <button onClick={saveMoment} className="flex items-center gap-2 bg-blue-900/40 hover:bg-blue-800/60 border border-blue-500/50 text-blue-200 px-4 py-2.5 rounded-xl transition-all hover:scale-105 active:scale-95 shadow-lg shadow-blue-900/20">
-              <Sparkles className="w-4 h-4" /> Save Timeline Memory
+            <button onClick={saveMoment} className="flex flex-col items-center justify-center gap-2 bg-blue-900/40 hover:bg-blue-800/60 border border-blue-500/30 text-blue-200 p-4 rounded-2xl transition-all text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-900/20">
+              <Clock className="w-5 h-5 text-blue-400" /> <span>Moment</span>
             </button>
           </div>
         </div>
         
-        {/* Date Night Stats */}
-        <div className="md:col-span-2 flex items-center justify-between p-4 bg-black/40 rounded-xl border border-white/5 mt-2">
+        {/* Stats - Unified footer */}
+        <div className="flex items-center justify-between px-3 py-2.5 bg-white/5 rounded-2xl border border-white/5">
            <div className="flex items-center gap-4">
-             <div className="text-center">
-               <div className="text-2xl font-bold text-pink-400">{room?.stats?.songsListened || 0}</div>
-               <div className="text-xs text-zinc-500 uppercase flex items-center gap-1"><Music className="w-3 h-3"/> Songs</div>
+             <div className="flex flex-col">
+               <span className="text-[10px] font-black text-pink-400 leading-none">{room?.stats?.songsListened || 0}</span>
+               <span className="text-[7px] font-black text-zinc-600 uppercase tracking-tighter mt-0.5">Vibes</span>
              </div>
-             <div className="w-px h-8 bg-white/10"></div>
-             <div className="text-center">
-               <div className="text-2xl font-bold text-purple-400">0h</div>
-               <div className="text-xs text-zinc-500 uppercase flex items-center gap-1"><Clock className="w-3 h-3"/> Together</div>
+             <div className="w-px h-5 bg-white/10"></div>
+             <div className="flex flex-col">
+               <span className="text-[10px] font-black text-purple-400 leading-none">0m</span>
+               <span className="text-[7px] font-black text-zinc-600 uppercase tracking-tighter mt-0.5">Sync</span>
              </div>
            </div>
            
-           <div className="flex -space-x-3">
+           <div className="flex -space-x-1.5">
              {room?.users.slice(0, 3).map((u, i) => (
-                <div key={i} className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 border-2 border-zinc-900 flex items-center justify-center text-xs font-bold shadow-lg">
-                  {u.username.substring(0,2).toUpperCase()}
+                <div key={i} className="w-6 h-6 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 border border-zinc-900 flex items-center justify-center text-[8px] font-black shadow-lg uppercase">
+                   {u.username.substring(0,1)}
                 </div>
              ))}
-             {room?.users.length > 3 && (
-                <div className="w-10 h-10 rounded-full bg-zinc-800 border-2 border-zinc-900 flex items-center justify-center text-xs font-bold shadow-lg text-zinc-400">
-                  +{room.users.length - 3}
-                </div>
-             )}
            </div>
         </div>
       </div>
     </div>
   );
 }
+
+export default memo(CoupleFeatures);

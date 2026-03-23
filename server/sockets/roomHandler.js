@@ -1,6 +1,50 @@
 const rooms = {};
 
+// ── Periodic Sync Broadcast (Every 10s) ──────────────────────────────────────
+let syncInterval = null;
+const startSyncInterval = (io) => {
+  if (syncInterval) return;
+  // 1. High-Frequency Sync Progress (200ms - for smooth playhead)
+  setInterval(() => {
+    const now = Date.now();
+    Object.values(rooms).forEach(room => {
+      if (room.users.length === 0 || !room.song) return;
+      let currentPos = room.currentTime;
+      if (room.isPlaying) currentPos += (now - room.updatedAt) / 1000;
+      io.to(room.roomId).emit('sync-progress', {
+        currentTime: currentPos,
+        serverTime: now,
+        isPlaying: room.isPlaying
+      });
+    });
+  }, 200);
+
+  // 2. Authoritative AntiGravity sync_pulse (1s - for metadata & drift correction)
+  setInterval(() => {
+    const now = Date.now();
+    Object.values(rooms).forEach(room => {
+      if (room.users.length === 0 || !room.song) return;
+      let currentPos = room.currentTime;
+      if (room.isPlaying) currentPos += (now - room.updatedAt) / 1000;
+      
+      const payload = {
+        song_id: room.song.videoId || room.song.id,
+        title: room.song.title,
+        artist: room.song.artist || 'LoopLobby',
+        artwork_url: room.song.thumbnail,
+        position_ms: Math.floor(currentPos * 1000),
+        duration_ms: room.song.durationMs || 0,
+        bpm: room.song.bpm || 120, // Default BPM if not metadata
+        next_track_id: room.queue.length > 0 ? (room.queue[0].videoId || room.queue[0].id) : (room.song.videoId || room.song.id),
+        server_ts: now
+      };
+      io.to(room.roomId).emit('sync_pulse', payload);
+    });
+  }, 1000);
+};
+
 module.exports = (io, socket) => {
+  startSyncInterval(io);
   const joinRoom = ({ roomId, username, isHost, isCoupleMode }) => {
     socket.join(roomId);
 
@@ -99,15 +143,27 @@ module.exports = (io, socket) => {
     socket.on('change-song', ({ roomId: rid, song }) => {
       const r = rooms[rid];
       if (!r) return;
-      if (r.queue.length > 0 && (r.queue[0].videoId === song.videoId || r.queue[0].id === song.id)) {
-        r.queue.shift();
+      
+      let nextSong = song;
+      if (!nextSong && r.queue.length > 0) {
+        nextSong = r.queue.shift();
         io.to(rid).emit('queue_updated', r.queue);
+      } else if (!nextSong) {
+        // ALWAYS-ON: Loop last track if queue is empty
+        nextSong = r.song;
+      } else {
+        // Provided song (like from search or queue click)
+        const qIdx = r.queue.findIndex(s => s.videoId === nextSong.videoId || s.id === nextSong.id);
+        if (qIdx !== -1) {
+          r.queue.splice(qIdx, 1);
+          io.to(rid).emit('queue_updated', r.queue);
+        }
       }
-      r.song = song;
+
+      r.song = nextSong;
       r.currentTime = 0;
       r.isPlaying = true;
       r.updatedAt = Date.now();
-      // Broadcast to ALL users so everyone loads the new song
       io.to(rid).emit('sync-song', { song: r.song, serverTime: r.updatedAt });
     });
 

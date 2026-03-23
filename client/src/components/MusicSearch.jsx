@@ -1,9 +1,9 @@
-import React, { useState, memo } from 'react';
-import { Search, Play, Plus, Heart, Music, ListMusic, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, memo } from 'react';
+import { Search, Play, Plus, Heart, Music, ListMusic, Loader2, X, History } from 'lucide-react';
 import { useRoomStore } from '../store/useRoomStore';
 import { useQuery } from '@tanstack/react-query';
 
-const SongItem = memo(({ song, isQueue, onPlay, onAdd, onToggleFav, isFav }) => (
+const SongItem = memo(({ song, isQueue, onPlay, onAdd, onToggleFav, isFav, isRecent }) => (
   <div 
     className="flex items-center gap-3 p-2 hover:bg-white/5 rounded-lg group transition-colors cursor-pointer"
     onClick={() => onPlay(song)}
@@ -15,7 +15,10 @@ const SongItem = memo(({ song, isQueue, onPlay, onAdd, onToggleFav, isFav }) => 
       </div>
     </div>
     <div className="flex-1 min-w-0">
-      <h4 className="text-sm font-medium text-white truncate">{song.title}</h4>
+      <div className="flex items-center gap-1.5">
+        <h4 className="text-sm font-medium text-white truncate">{song.title}</h4>
+        {isRecent && <span className="text-[7px] bg-white/10 text-zinc-400 px-1 py-0.5 rounded font-black uppercase tracking-widest">Recent</span>}
+      </div>
       <p className="text-xs text-zinc-400 truncate">{song.artist}</p>
     </div>
     <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -35,27 +38,31 @@ const SongItem = memo(({ song, isQueue, onPlay, onAdd, onToggleFav, isFav }) => 
   </div>
 ));
 
-export default function MusicSearch() {
-  const { room, socket } = useRoomStore();
+const MusicSearch = () => {
+  const { room, socket, recentlyPlayed } = useRoomStore();
   const [query, setQuery] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState('search');
+  
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchTerm(query.trim());
+    }, 400); // Fast 400ms debounce
+    return () => clearTimeout(timer);
+  }, [query]);
 
   const { data: results = [], isLoading: loading } = useQuery({
     queryKey: ['music-search', searchTerm],
     queryFn: async () => {
       if (!searchTerm) return [];
       const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/music/search?q=${encodeURIComponent(searchTerm)}`);
+      if (!res.ok) return [];
       const data = await res.json();
       return data.results || [];
     },
     enabled: !!searchTerm,
+    staleTime: 1000 * 60 * 5, // Cache for 5 mins
   });
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    setSearchTerm(query.trim());
-  };
 
   const playSong = (song) => {
     const roomId = room?.roomId;
@@ -65,7 +72,6 @@ export default function MusicSearch() {
 
   const addToQueue = (song) => {
     if (!room?.roomId || !socket) return;
-    // Server handler listens for bare `song` argument
     socket.emit('add_to_queue', song);
   };
 
@@ -82,46 +88,85 @@ export default function MusicSearch() {
   return (
     <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
       <div className="space-y-4">
-        <form onSubmit={handleSearch} className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+        <form 
+          onSubmit={(e) => {
+            e.preventDefault();
+            const trimmed = query.trim();
+            if (trimmed) setSearchTerm(trimmed);
+          }} 
+          className="relative"
+        >
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
           <input 
             type="text" 
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search songs on YouTube..." 
-            className="w-full bg-black/50 border border-white/10 rounded-full py-2 pl-10 pr-4 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-pink-500/50 transition-colors"
+            placeholder="Search songs..." 
+            className="w-full bg-black/40 border border-white/5 rounded-full py-2.5 pl-10 pr-10 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-pink-500/30 transition-all"
           />
+          {query && (
+            <button 
+              onClick={() => setQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-zinc-500 hover:text-white transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
         </form>
         
         <div className="space-y-1">
           {loading ? (
-            <div className="flex items-center justify-center py-8">
+            <div className="flex items-center justify-center py-12">
               <Loader2 className="w-6 h-6 text-pink-500 animate-spin" />
             </div>
           ) : results.length > 0 ? (
-            results.map(song => (
-              <SongItem 
-                key={song.videoId} 
-                song={song} 
-                onPlay={playSong} 
-                onAdd={addToQueue} 
-                onToggleFav={toggleFavorite}
-                isFav={isFavorite(song.videoId)}
-              />
-            ))
-          ) : searchTerm ? (
-            <div className="text-center py-12 text-zinc-500 flex flex-col items-center gap-3">
-              <Music className="w-12 h-12 opacity-20" />
-              <p className="text-sm">No results found for "{searchTerm}"</p>
+            <>
+              <div className="px-2 py-1 mb-2 text-[9px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-1.5">
+                <Music className="w-3 h-3" /> Search Results
+              </div>
+              {results.map(song => (
+                <SongItem 
+                  key={song.videoId} 
+                  song={song} 
+                  onPlay={playSong} 
+                  onAdd={addToQueue} 
+                  onToggleFav={toggleFavorite}
+                  isFav={isFavorite(song.videoId)}
+                />
+              ))}
+            </>
+          ) : query && searchTerm ? (
+            <div className="text-center py-12 text-zinc-600 flex flex-col items-center gap-2">
+              <Music className="w-8 h-8 opacity-20" />
+              <p className="text-[11px] font-black uppercase tracking-widest opacity-40">No results for "{searchTerm}"</p>
             </div>
+          ) : recentlyPlayed.length > 0 ? (
+            <>
+              <div className="px-2 py-1 mb-2 text-[9px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-1.5 opacity-60">
+                <History className="w-3 h-3 text-pink-500/50" /> Recently Played
+              </div>
+              {recentlyPlayed.map(song => (
+                <SongItem 
+                  key={song.videoId} 
+                  song={song} 
+                  onPlay={playSong} 
+                  onAdd={addToQueue} 
+                  onToggleFav={toggleFavorite}
+                  isFav={isFavorite(song.videoId)}
+                  isRecent={true}
+                />
+              ))}
+            </>
           ) : (
-            <div className="text-center py-12 text-zinc-500 flex flex-col items-center gap-3">
-              <Music className="w-12 h-12 opacity-20" />
-              <p className="text-sm">Search for a song to play</p>
+            <div className="text-center py-12 text-zinc-600 flex flex-col items-center gap-2">
+              <Loader2 className="w-8 h-8 opacity-10" />
+              <p className="text-[11px] font-black uppercase tracking-widest opacity-30">Type to explore Music</p>
             </div>
           )}
         </div>
       </div>
     </div>
   );
-}
+};
+
+export default memo(MusicSearch);

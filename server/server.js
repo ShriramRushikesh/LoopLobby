@@ -23,6 +23,7 @@ io.on('connection', (socket) => {
 });
 
 const ytSearch = require('yt-search');
+const searchCache = new Map();
 
 // Simple API route
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
@@ -31,8 +32,14 @@ app.get('/api/music/search', async (req, res) => {
   try {
     const { q } = req.query;
     if (!q) return res.status(400).json({ error: 'Query is required' });
+    
+    // Cache check
+    if (searchCache.has(q.toLowerCase())) {
+      return res.json({ results: searchCache.get(q.toLowerCase()), cached: true });
+    }
+
     const r = await ytSearch(q);
-    const videos = r.videos.slice(0, 10).map(v => ({
+    const videos = r.videos.slice(0, 12).map(v => ({
       videoId: v.videoId,
       title: v.title,
       artist: v.author.name,
@@ -41,6 +48,15 @@ app.get('/api/music/search', async (req, res) => {
       thumbnail: v.thumbnail,
       url: v.url
     }));
+
+    // Cache to memory
+    searchCache.set(q.toLowerCase(), videos);
+    // Simple eviction
+    if (searchCache.size > 50) {
+      const firstKey = searchCache.keys().next().value;
+      searchCache.delete(firstKey);
+    }
+
     res.json({ results: videos });
   } catch (error) {
     console.error('Search error:', error);

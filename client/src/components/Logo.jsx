@@ -1,39 +1,51 @@
 import React from 'react';
 
-export default function Logo({ className = "w-32 h-auto text-white" }) {
+export default function Logo({ className = "w-full h-full text-white" }) {
   return (
     <svg 
-      viewBox="0 0 200 80" 
-      fill="currentColor" 
-      xmlns="http://www.w3.org/2000/svg" 
-      className={className}
+      width="100%" 
+      height="100%" 
+      viewBox="0 0 300 80" 
+      fill="none" 
+      xmlns="http://www.w3.org/2000/svg"
+      className={className + " drop-shadow-[0_0_15px_rgba(236,72,153,0.3)]"}
     >
+      <defs>
+        <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#FFFFFF" />
+          <stop offset="100%" stopColor="#EC4899" />
+        </linearGradient>
+      </defs>
+
       {/* "LoopLobby" Main Text */}
       <text 
-        x="10" 
+        x="0" 
         y="50" 
         fontFamily="Arial, sans-serif" 
         fontWeight="900" 
-        fontSize="52" 
-        letterSpacing="-2"
+        fontSize="54" 
+        letterSpacing="-3"
+        fill="url(#logoGradient)"
       >
         LoopLobby
       </text>
       
       {/* "sync vibes" Subtitle */}
       <text 
-        x="12" 
-        y="75" 
+        x="2" 
+        y="72" 
         fontFamily="Arial, sans-serif" 
         fontWeight="800" 
-        fontSize="16" 
-        letterSpacing="-1"
+        fontSize="12" 
+        letterSpacing="0.4em" 
+        fill="#EC4899" 
+        style={{ textTransform: 'uppercase', opacity: 0.8 }}
       >
         sync vibes
       </text>
 
       {/* Floating Elements (Heart + Music Note) */}
-      <g transform="translate(145, 10)">
+      <g transform="translate(200, 10)">
         {/* Heart */}
         <path 
           d="M14.5,2 C12,2 9.8,3.5 9,5.8 C8.2,3.5 6,2 3.5,2 C1.5,2 0,3.5 0,5.5 C0,9.5 9,16 9,16 C9,16 18,9.5 18,5.5 C18,3.5 16.5,2 14.5,2 Z" 

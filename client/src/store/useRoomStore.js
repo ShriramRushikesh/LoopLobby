@@ -29,12 +29,17 @@ export const useRoomStore = create((set) => ({
   isTyping: false,
   typingMsg: '',
   unreadChatCount: 0,
+  recentlyPlayed: [],
 
-  setRoom: (room) => set({
-    room,
-    queue: room?.queue || [],
-    currentSong: room?.song || null,
-    members: room?.users || [],
+  setRoom: (room) => set((state) => {
+    const nextSong = room?.song || null;
+    const isSameSong = (state.currentSong?.videoId === nextSong?.videoId) || (state.currentSong?.id === nextSong?.id);
+    return {
+      room,
+      queue: room?.queue || [],
+      currentSong: isSameSong ? state.currentSong : nextSong,
+      members: room?.users || [],
+    };
   }),
   // ... existing actions ...
   setSocket: (socket) => set({ socket }),
@@ -44,10 +49,19 @@ export const useRoomStore = create((set) => ({
   setDuration: (duration) => set({ duration }),
   setIsAudible: (isAudible) => set({ isAudible }),
   setCurrentSong: (currentSong) => set({ currentSong }),
-  updateCurrentSong: (song) => set((state) => ({
-    room: state.room ? { ...state.room, song } : state.room,
-    currentSong: song,
-  })),
+  updateCurrentSong: (song) => set((state) => {
+    if (song?.videoId && song.videoId !== state.currentSong?.videoId) {
+      // Logic for recently played
+      const filtered = state.recentlyPlayed.filter(s => s.videoId !== song.videoId);
+      state.recentlyPlayed = [song, ...filtered].slice(0, 10);
+    }
+    return {
+      room: state.room ? { ...state.room, song } : state.room,
+      currentSong: song,
+      progress: 0, // Reset progress on song change
+      recentlyPlayed: [...state.recentlyPlayed], // ensure reactivity
+    };
+  }),
   setQueue: (queue) => set({ queue }),
   setMembers: (members) => set({ members }),
   setLatency: (latency) => set({ latency }),
@@ -62,6 +76,7 @@ export const useRoomStore = create((set) => ({
   updateSong: (song) => set((state) => ({
     room: state.room ? { ...state.room, song } : state.room,
     currentSong: song,
+    progress: 0, // Reset progress
   })),
   updateSongProgress: (progress) => set({ progress }),
 
@@ -79,6 +94,13 @@ export const useRoomStore = create((set) => ({
 
   setPartnerTouching: (touching) => set({ partnerTouching: touching }),
   setTyping: (isTyping, typingMsg) => set({ isTyping, typingMsg }),
+
+  addToRecentlyPlayed: (song) => set((state) => {
+    if (!song?.videoId) return state;
+    const filtered = state.recentlyPlayed.filter(s => s.videoId !== song.videoId);
+    const updated = [song, ...filtered].slice(0, 10);
+    return { recentlyPlayed: updated };
+  }),
 
   // Cleanup for floating elements
   removeLoveNote: (id) => set((state) => ({ loveNotes: state.loveNotes.filter((n) => n.id !== id) })),

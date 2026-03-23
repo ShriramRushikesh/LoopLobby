@@ -1,5 +1,5 @@
 import React, { useRef, useCallback } from 'react';
-import { Play, Pause, SkipForward, SkipBack, Music } from 'lucide-react';
+import { Play, Pause, SkipForward, SkipBack, Music, Loader2 } from 'lucide-react';
 import { useRoomStore } from '../store/useRoomStore';
 import { useParams } from 'react-router-dom';
 import SongLyrics from './SongLyrics';
@@ -34,19 +34,19 @@ export default function RoomPlayer({ isHost, compact = false }) {
     socket.emit('seek', { roomId, currentTime: t });
   }, [socket, roomId]);
 
-  // ── Play/Pause — audioEngine called IMMEDIATELY inside gesture for mobile ──
   const togglePlay = useCallback(() => {
     if (!currentSong || !socket) return;
+    const exactTime = audioEngine.getCurrentTime();
     if (isPlaying) {
-      audioEngine.pause();       // INSIDE gesture — mobile allows this
+      audioEngine.pause();
       setIsPlaying(false);
-      socket.emit('pause', { roomId, currentTime: progress });
+      socket.emit('pause', { roomId, currentTime: exactTime });
     } else {
-      audioEngine.play();        // INSIDE gesture — mobile allows this
+      audioEngine.play();
       setIsPlaying(true);
-      socket.emit('play', { roomId, currentTime: progress });
+      socket.emit('play', { roomId, currentTime: exactTime });
     }
-  }, [isPlaying, currentSong, socket, roomId, progress]);
+  }, [isPlaying, currentSong, socket, roomId]);
 
   const playNext = useCallback(() => {
     if (room?.queue?.length > 0 && socket) {
@@ -68,13 +68,12 @@ export default function RoomPlayer({ isHost, compact = false }) {
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
-  // Progress percentage — only move if audible AND not seeking
   const displayProgress = seekingRef.current ? seekValueRef.current : (isAudible ? progress : 0);
   const pct = duration > 0 ? (displayProgress / duration) * 100 : 0;
 
   if (compact) {
     return (
-      <div className="bg-black/40 rounded-3xl border border-white/10 backdrop-blur-xl p-4 relative overflow-hidden flex flex-col gap-4">
+      <div className="bg-black/40 rounded-[2rem] border border-white/5 backdrop-blur-3xl p-5 relative overflow-hidden flex flex-col">
         {hasSong && currentSong.thumbnail && (
           <div
             className="absolute inset-0 bg-cover bg-center opacity-10 blur-2xl pointer-events-none"
@@ -83,82 +82,68 @@ export default function RoomPlayer({ isHost, compact = false }) {
         )}
         
         <div className="relative z-10 flex items-center gap-4">
-          {/* Circular Art */}
-          <div className="w-20 h-20 rounded-full bg-zinc-800 shadow-lg overflow-hidden flex-shrink-0 relative group">
-            {hasSong && currentSong.thumbnail ? (
-              <img src={currentSong.thumbnail} alt="thumbnail" className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-purple-800 to-pink-900 flex items-center justify-center">
-                <Music className="w-8 h-8 text-white/30" />
-              </div>
-            )}
+          <div className="w-20 h-20 rounded-full bg-zinc-800 shadow-[0_0_20px_rgba(236,72,153,0.2)] overflow-hidden flex-shrink-0 relative border border-white/10 p-1">
+            <div className="w-full h-full rounded-full overflow-hidden">
+              {hasSong && currentSong.thumbnail ? (
+                <img src={currentSong.thumbnail} alt="thumbnail" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-zinc-800 to-black flex items-center justify-center">
+                  <Music className="w-4 h-4 text-white/20" />
+                </div>
+              )}
+            </div>
             {isPlaying && (
-              <div className="absolute inset-0 border-2 border-pink-500/30 rounded-full heartbeat-pulse pointer-events-none" />
+              <div className="absolute inset-0 border-2 border-pink-500/50 rounded-full animate-ping opacity-20" />
             )}
           </div>
 
           <div className="flex-1 min-w-0 flex flex-col justify-center">
-            <h2 className="text-lg font-bold text-white leading-tight line-clamp-1">
-              {hasSong && !isAudible ? 'Preparing Vibe...' : (currentSong?.title || 'Nothing playing')}
-            </h2>
-            <p className="text-zinc-400 text-sm line-clamp-1 font-medium">
-              {hasSong && !isAudible ? 'Buffering 3s for perfect sync' : (currentSong?.artist || 'Search a song')}
-            </p>
-            
-            {/* Seekbar on the right */}
-            <div className="mt-2 relative h-1.5 w-full bg-white/10 rounded-full overflow-hidden flex items-center">
-              <div
-                className="absolute left-0 h-full bg-gradient-to-r from-pink-500 to-purple-500 rounded-full"
-                style={{ width: `${pct}%` }}
-              />
-              {/* Visible Handle */}
-              {hasSong && (
-                <div 
-                  className="absolute w-3 h-3 bg-white rounded-full shadow-lg border border-pink-500/50 pointer-events-none transition-all duration-75"
-                  style={{ left: `calc(${pct}% - 6px)` }}
-                />
-              )}
-              <input
-                type="range"
-                min={0}
-                max={duration || 100}
-                step={0.5}
-                onMouseDown={handleSeekStart}
-                onTouchStart={handleSeekStart}
-                onChange={handleSeekMove}
-                onMouseUp={handleSeekEnd}
-                onTouchEnd={handleSeekEnd}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                disabled={!hasSong}
-              />
+            <div className="h-[34px] flex flex-col justify-center overflow-hidden">
+              <h2 className="text-sm font-black text-white leading-tight line-clamp-1 italic tracking-tight uppercase">
+                {hasSong ? (currentSong?.title || 'Loading...') : 'Nothing playing'}
+              </h2>
+              <p className="text-pink-500/80 text-[8px] font-black uppercase tracking-[0.2em] line-clamp-1">
+                {hasSong ? currentSong?.artist : 'Search a song'}
+              </p>
             </div>
-          </div>
-
-          {/* Compact Controls */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={playPrevious}
-              className="p-2 text-zinc-400 hover:text-white transition active:scale-90"
-              disabled={!hasSong}
-            >
-              <SkipBack className="w-5 h-5 fill-current" />
-            </button>
-
-            <button
-              onClick={togglePlay}
-              disabled={!hasSong}
-              className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center shadow-lg active:scale-90 transition-all"
-            >
-              {isPlaying ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current ml-0.5" />}
-            </button>
-
-            <button
-              onClick={playNext}
-              className="p-2 text-zinc-400 hover:text-white transition active:scale-90"
-              disabled={!hasSong || !room?.queue?.length}
-            >
-              <SkipForward className="w-5 h-5 fill-current" />
-            </button>
+            
+            <div className="space-y-1 mt-2">
+              <div className="relative h-1 w-full bg-white/5 rounded-full overflow-hidden flex items-center">
+                <div
+                  className="absolute left-0 h-full bg-gradient-to-r from-pink-500 to-purple-500 rounded-full"
+                  style={{ width: `${pct}%` }}
+                />
+                <input
+                  type="range"
+                  min={0}
+                  max={duration || 100}
+                  step={0.5}
+                  onMouseDown={handleSeekStart}
+                  onTouchStart={handleSeekStart}
+                  onChange={handleSeekMove}
+                  onMouseUp={handleSeekEnd}
+                  onTouchEnd={handleSeekEnd}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  disabled={!hasSong}
+                />
+              </div>
+              
+              <div className="flex items-center justify-between pt-1">
+                <button onClick={playPrevious} className="text-zinc-500 active:text-white transition" disabled={!hasSong}>
+                  <SkipBack className="w-3.5 h-3.5 fill-current" />
+                </button>
+                <button
+                  onClick={togglePlay}
+                  disabled={!hasSong}
+                  className="w-9 h-9 rounded-full bg-white text-black flex items-center justify-center shadow-lg active:scale-90 transition-all font-black"
+                >
+                  {isPlaying ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current ml-0.5" />}
+                </button>
+                <button onClick={playNext} className="text-zinc-500 active:text-white transition" disabled={!hasSong || !room?.queue?.length}>
+                  <SkipForward className="w-3.5 h-3.5 fill-current" />
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -166,109 +151,96 @@ export default function RoomPlayer({ isHost, compact = false }) {
   }
 
   return (
-    <div className="bg-black/40 rounded-3xl border border-white/10 backdrop-blur-xl p-6 relative overflow-hidden flex flex-col">
-
-      {/* Background blur of album art */}
-      <div className="absolute inset-0 bg-gradient-to-br from-zinc-800 to-zinc-900 opacity-50" />
+    <div className="bg-black/40 rounded-[2rem] border border-white/10 backdrop-blur-3xl p-6 lg:p-7 relative overflow-hidden flex flex-col shadow-2xl ring-1 ring-white/5 transition-all duration-500 hover:border-white/20">
+      <div className="absolute inset-0 bg-gradient-to-br from-zinc-800/10 via-transparent to-zinc-900/10 opacity-30" />
       {hasSong && currentSong.thumbnail && (
         <div
-          className="absolute inset-0 bg-cover bg-center opacity-20 blur-3xl pointer-events-none"
+          className="absolute inset-0 bg-cover bg-center opacity-10 blur-[60px] pointer-events-none"
           style={{ backgroundImage: `url(${currentSong.thumbnail})` }}
         />
       )}
 
-      <div className="relative z-10 flex flex-col md:flex-row gap-6 md:gap-10 items-center md:items-start w-full">
-        {/* Album Art */}
-        <div className="w-40 h-40 sm:w-56 sm:h-56 md:w-64 md:h-64 rounded-2xl bg-zinc-800 shadow-2xl overflow-hidden flex-shrink-0 relative group transition-all duration-500">
+      <div className="relative z-10 flex flex-col lg:flex-row gap-6 lg:gap-10 items-center lg:items-center w-full h-full">
+        {/* Album Art - Compacted */}
+        <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-3xl bg-zinc-800 shadow-[0_15px_40px_rgba(0,0,0,0.5)] overflow-hidden flex-shrink-0 relative group transition-transform duration-500 hover:scale-[1.02]">
           {hasSong && currentSong.thumbnail ? (
             <img src={currentSong.thumbnail} alt="thumbnail" className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-purple-800 to-pink-900 flex items-center justify-center">
-              <Music className="w-24 h-24 text-white/30" />
+              <Music className="w-12 h-12 text-white/30" />
             </div>
           )}
           {isPlaying && (
-            <div className="absolute inset-0 border-4 border-pink-500/30 rounded-2xl heartbeat-pulse pointer-events-none" />
+            <div className="absolute inset-0 border-4 border-pink-500/30 rounded-3xl heartbeat-pulse pointer-events-none" />
           )}
         </div>
 
-        {/* Track Info & Controls */}
-        <div className="flex-1 w-full space-y-6 flex flex-col justify-center">
-          <div className="text-center md:text-left space-y-1">
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-1 leading-tight line-clamp-2">
-              {hasSong && !isAudible ? 'Preparing Vibe...' : (currentSong?.title || 'Nothing playing')}
-            </h2>
-            <p className="text-zinc-400 text-base md:text-lg line-clamp-1 font-medium">
-              {hasSong && !isAudible ? 'Buffering 3s for perfect sync' : (currentSong?.artist || 'Search and play a song')}
+        {/* Track Info & Controls - More compact vertical space */}
+        <div className="flex-1 w-full min-w-0 flex flex-col justify-center space-y-4">
+          <div className="text-center lg:text-left h-[52px] flex flex-col justify-center overflow-hidden">
+            <div className="flex items-center justify-center lg:justify-start gap-3">
+              <h2 className="text-xl sm:text-2xl font-black text-white leading-tight line-clamp-1 uppercase tracking-tight italic">
+                {hasSong && !isAudible ? (
+                  <div className="flex items-center gap-2 text-pink-500">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span className="text-xs font-black uppercase tracking-widest animate-pulse">Syncing...</span>
+                  </div>
+                ) : (currentSong?.title || 'Nothing playing')}
+              </h2>
+            </div>
+            <p className="text-pink-500 font-black uppercase tracking-[0.2em] text-[10px] line-clamp-1 opacity-70 mt-0.5">
+              {hasSong && !isAudible ? 'Perfecting rhythm' : (currentSong?.artist || 'Search and play a song')}
             </p>
+            {room?.queue?.length > 0 && (
+              <div className="flex items-center gap-1.5 mt-1.5 opacity-40">
+                <span className="text-[8px] font-black uppercase tracking-[0.2em] text-zinc-400">Up Next:</span>
+                <span className="text-[8px] font-bold text-zinc-300 truncate max-w-[150px]">{room.queue[0].title}</span>
+              </div>
+            )}
           </div>
 
-          {/* Progress Bar — fires only on release */}
-          <div className="space-y-2">
-            <div className="relative h-3 w-full bg-white/10 rounded-full overflow-hidden flex items-center cursor-pointer">
+          {/* Progress Bar - Thinner for compact look */}
+          <div className="space-y-1.5 w-full">
+            <div className="relative h-1.5 w-full bg-white/5 rounded-full overflow-hidden group/progress">
               <div
-                className="absolute left-0 h-full bg-gradient-to-r from-pink-500 to-purple-500 rounded-full pointer-events-none transition-none"
+                className="absolute left-0 h-full bg-gradient-to-r from-pink-500 to-purple-500 rounded-full shadow-[0_0_8px_rgba(236,72,153,0.4)]"
                 style={{ width: `${pct}%` }}
               />
-              {/* Visible Handle */}
-              {hasSong && (
-                <div 
-                  className="absolute w-5 h-5 bg-white rounded-full shadow-2xl border-2 border-pink-500/50 pointer-events-none transition-all duration-75 z-20"
-                  style={{ left: `calc(${pct}% - 10px)` }}
-                />
-              )}
               <input
                 type="range"
                 min={0}
                 max={duration || 100}
                 step={0.5}
-                defaultValue={0}
                 onMouseDown={handleSeekStart}
                 onTouchStart={handleSeekStart}
                 onChange={handleSeekMove}
                 onMouseUp={handleSeekEnd}
                 onTouchEnd={handleSeekEnd}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                 disabled={!hasSong}
               />
             </div>
-            <div className="flex justify-between text-xs font-medium text-zinc-500">
-              <span>{isAudible ? formatTime(displayProgress) : '--:--'}</span>
+            <div className="flex justify-between text-[9px] font-black text-zinc-500 uppercase tracking-[0.1em] font-mono">
+              <span>{isAudible ? formatTime(displayProgress) : '0:00'}</span>
               <span>{currentSong?.durationText || formatTime(duration) || '0:00'}</span>
             </div>
           </div>
 
-          {/* Controls */}
-          <div className="flex items-center justify-center md:justify-start gap-4 sm:gap-6 mt-2 md:mt-6">
+          {/* Controls - Premium Sizing */}
+          <div className="flex items-center justify-center lg:justify-start gap-8 pt-2">
+            <button onClick={playPrevious} className="text-zinc-500 hover:text-white transition-all transform hover:scale-125 active:scale-90" disabled={!hasSong}>
+              <SkipBack className="w-7 h-7 fill-current" />
+            </button>
             <button
-              onClick={playPrevious}
-              className="text-zinc-400 hover:text-white transition"
+              onClick={(e) => { e.stopPropagation(); togglePlay(); }}
               disabled={!hasSong}
+              className="w-16 h-16 rounded-full flex items-center justify-center shadow-[0_10px_30px_rgba(236,72,153,0.4)] transition-all bg-white text-black hover:scale-110 active:scale-95 hover:bg-pink-50 ring-4 ring-white/10"
             >
-              <SkipBack className={`w-8 h-8 fill-current ${!hasSong && 'opacity-50'}`} />
+              {isPlaying ? <Pause className="w-7 h-7 fill-current" /> : <Play className="w-7 h-7 fill-current ml-1" />}
             </button>
-
-            <button
-              onClick={togglePlay}
-              disabled={!hasSong}
-              className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center shadow-xl transition-all ${
-                hasSong
-                  ? 'bg-white text-black hover:scale-105 active:scale-95 cursor-pointer'
-                  : 'bg-white/20 text-white/50 cursor-not-allowed'
-              }`}
-            >
-              {isPlaying ? <Pause className="w-6 h-6 sm:w-8 sm:h-8 fill-current" /> : <Play className="w-6 h-6 sm:w-8 sm:h-8 fill-current ml-1" />}
+            <button onClick={playNext} className="text-zinc-500 hover:text-white transition-all transform hover:scale-125 active:scale-90" disabled={!hasSong || !room?.queue?.length}>
+              <SkipForward className="w-7 h-7 fill-current" />
             </button>
-
-            <button
-              onClick={playNext}
-              className="text-zinc-400 hover:text-white transition hover:scale-110 active:scale-95 cursor-pointer"
-              disabled={!hasSong || !room?.queue?.length}
-            >
-              <SkipForward className={`w-8 h-8 fill-current ${(!hasSong || !room?.queue?.length) && 'opacity-50'}`} />
-            </button>
-
-
           </div>
         </div>
       </div>

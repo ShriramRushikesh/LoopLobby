@@ -19,7 +19,22 @@ export default function Room() {
   const { id } = useParams();
   const { state } = useLocation();
   const navigate = useNavigate();
-  const { setSocket, setRoom, room, currentSong, socket, moodMode, setMoodMode, addChatMessage, addLoveNote, addVirtualGift, addEmoji, setTyping, updateRoomQueue, updateRoomFavorites, updateCurrentSong, updateSongProgress } = useRoomStore();
+  const setSocket = useRoomStore(s => s.setSocket);
+  const setRoom = useRoomStore(s => s.setRoom);
+  const room = useRoomStore(s => s.room);
+  const currentSong = useRoomStore(s => s.currentSong);
+  const socket = useRoomStore(s => s.socket);
+  const moodMode = useRoomStore(s => s.moodMode);
+  const setMoodMode = useRoomStore(s => s.setMoodMode);
+  const addChatMessage = useRoomStore(s => s.addChatMessage);
+  const addLoveNote = useRoomStore(s => s.addLoveNote);
+  const addVirtualGift = useRoomStore(s => s.addVirtualGift);
+  const addEmoji = useRoomStore(s => s.addEmoji);
+  const setTyping = useRoomStore(s => s.setTyping);
+  const updateRoomQueue = useRoomStore(s => s.updateRoomQueue);
+  const updateRoomFavorites = useRoomStore(s => s.updateRoomFavorites);
+  const updateCurrentSong = useRoomStore(s => s.updateCurrentSong);
+  const updateSongProgress = useRoomStore(s => s.updateSongProgress);
   const [isShaking, setIsShaking] = useState(false);
   const [copied, setCopied] = useState(false);
   const [mobileTab, setMobileTab] = useState('player');
@@ -123,7 +138,7 @@ export default function Room() {
         <LoveNotes />
           <header className="p-4 border-b border-white/10 flex justify-between items-center bg-black/40 backdrop-blur-xl sticky top-0 z-[100]">
           <div className="flex items-center gap-2">
-            <Logo className="w-28 h-auto text-white" />
+            <Logo className="w-36 h-auto text-white" />
           </div>
 
           <div className="flex items-center gap-3">
@@ -146,68 +161,108 @@ export default function Room() {
               </button>
               
               {/* Dropdown Menu */}
-              <div className="absolute right-0 mt-2 w-48 bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[60] overflow-hidden">
-                <button 
-                  onClick={shareToWhatsApp}
-                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 text-zinc-300 transition-colors"
-                >
-                  <MessageCircle className="w-4 h-4 text-[#25D366]" />
-                  <span className="text-sm">WhatsApp</span>
-                </button>
-                <button 
-                  onClick={shareToInstagram}
-                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 text-zinc-300 transition-colors"
-                >
-                  <Instagram className="w-4 h-4 text-[#dc2743]" />
-                  <span className="text-sm">Instagram</span>
-                </button>
-                <button 
-                  onClick={() => {
-                    navigator.clipboard.writeText(window.location.href);
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 2000);
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 text-zinc-300 transition-colors border-t border-white/5"
-                >
-                  <Share2 className="w-4 h-4 text-blue-400" />
-                  <span className="text-sm">Copy Link</span>
-                </button>
+              <div className="absolute right-0 mt-3 w-56 bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[60] overflow-hidden">
+                {/* Room Code Header */}
+                <div className="bg-white/5 p-4 border-b border-white/5">
+                  <div className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1.5 opacity-60">Room Address</div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-black text-pink-400 font-mono tracking-tight truncate">{id}</span>
+                    <button 
+                      onClick={() => {
+                        navigator.clipboard.writeText(id);
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                      }}
+                      className="text-[9px] font-black uppercase text-zinc-400 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-2 py-1 rounded-md border border-white/5"
+                    >
+                      {copied ? 'Copied' : 'Copy'}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="py-1">
+                  <button 
+                    onClick={shareToWhatsApp}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 text-zinc-300 transition-colors"
+                  >
+                    <MessageCircle className="w-4 h-4 text-[#25D366]" />
+                    <span className="text-sm">WhatsApp</span>
+                  </button>
+                  <button 
+                    onClick={shareToInstagram}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 text-zinc-300 transition-colors"
+                  >
+                    <Instagram className="w-4 h-4 text-[#dc2743]" />
+                    <span className="text-sm">Instagram</span>
+                  </button>
+                  <button 
+                    onClick={() => {
+                      navigator.clipboard.writeText(window.location.href);
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 text-zinc-300 transition-colors border-t border-white/5"
+                  >
+                    <Share2 className="w-4 h-4 text-blue-400" />
+                    <span className="text-sm font-medium">Full Room Link</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </header>
 
-      <main className="max-w-[1600px] mx-auto p-4 lg:p-6 flex flex-col lg:grid lg:grid-cols-3 gap-6 h-[calc(100vh-140px)] lg:h-[calc(100vh-80px)] overflow-hidden">
+      <main className={`max-w-[1600px] mx-auto ${['chat', 'extras'].includes(mobileTab) ? 'p-0' : 'p-4'} lg:p-6 flex flex-col lg:grid lg:grid-cols-[1.3fr_0.85fr_0.85fr] gap-6 h-[calc(100vh-140px)] lg:h-[calc(100vh-80px)] overflow-hidden`}>
         
-        {/* COLUMN 1: Player & Couple Features (Desktop) / Player Tab (Mobile) */}
+        {/* COLUMN 1: Room Extra (Desktop) / Player Tab (Mobile) */}
         <div className={`${mobileTab === 'player' ? 'flex' : 'hidden'} lg:flex flex-col gap-6 h-full overflow-hidden`}>
-          {/* Top Player */}
-          <div className="shrink-0 bg-white/5 rounded-[2rem] border border-white/10 overflow-hidden shadow-xl backdrop-blur-md">
-            <div className="lg:hidden">
-              <RoomPlayer isHost={state?.isHost} username={state?.username} compact={true} />
+          {/* Unified Room Extra Card */}
+          <div className="flex-1 flex flex-col min-h-0 bg-white/5 rounded-[2.5rem] border border-white/10 shadow-2xl backdrop-blur-3xl overflow-hidden ring-1 ring-white/5 transition-all duration-500">
+            {/* Desktop View: Top-to-Bottom Flow */}
+            <div className="hidden lg:flex flex-col h-full overflow-hidden">
+               {/* Player Section */}
+               <div className="p-4 border-b border-white/5">
+                 <RoomPlayer isHost={state?.isHost} username={state?.username} />
+               </div>
+               
+               {/* Features Section */}
+               <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
+                 <div className="shrink-0 mb-4 text-[10px] font-black uppercase tracking-[0.3em] text-pink-500/60 flex items-center gap-2">
+                   <div className="w-1.5 h-1.5 rounded-full bg-pink-500 shadow-[0_0_8px_rgba(236,72,153,0.5)]" />
+                   Room Extra
+                 </div>
+                 <CoupleFeatures username={state?.username} />
+               </div>
             </div>
-            <div className="hidden lg:block">
-              <RoomPlayer isHost={state?.isHost} username={state?.username} />
-            </div>
-          </div>
 
-          {/* Desktop: Couple Features | Mobile: Sub-tabs (Search/Fav/Queue) */}
-          <div className="flex-1 flex flex-col min-h-0 bg-white/5 rounded-[2rem] border border-white/10 overflow-hidden shadow-xl backdrop-blur-md">
-            {/* On Desktop: Show Features directly */}
-            <div className="hidden lg:block h-full overflow-y-auto custom-scrollbar p-6">
-              <div className="mb-4 text-xs font-black uppercase tracking-[0.2em] text-zinc-500">Couple Features</div>
-              <CoupleFeatures username={state?.username} />
-            </div>
-
-            {/* On Mobile: Integrated Search/Fav/Queue Switcher */}
+            {/* Mobile View: Compact Switcher (Unchanged logic, just inside new container) */}
             <div className="lg:hidden flex flex-col h-full overflow-hidden">
-              <div className="flex border-b border-white/10 bg-white/5">
-                <button onClick={() => setPlayerSubTab('search')} className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest ${playerSubTab === 'search' ? 'text-pink-400 bg-white/5' : 'text-zinc-500'}`}>Search</button>
-                <button onClick={() => setPlayerSubTab('fav')} className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest ${playerSubTab === 'fav' ? 'text-pink-400 bg-white/5' : 'text-zinc-500'}`}>Fav</button>
-                <button onClick={() => setPlayerSubTab('queue')} className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest ${playerSubTab === 'queue' ? 'text-pink-400 bg-white/5' : 'text-zinc-500'}`}>Queue</button>
-                <button onClick={() => setPlayerSubTab('lyrics')} className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest ${playerSubTab === 'lyrics' ? 'text-pink-400 bg-white/5' : 'text-zinc-500'}`}>Lyrics</button>
+              <div className="shrink-0 bg-black/20">
+                <RoomPlayer isHost={state?.isHost} username={state?.username} compact={true} />
               </div>
-              <div className="flex-1 overflow-y-auto p-2 custom-scrollbar">
+              {/* Lyrics Ribbon */}
+              <button 
+                onClick={() => setPlayerSubTab('lyrics')}
+                className={`mx-4 mt-4 py-2 rounded-lg font-black uppercase tracking-widest text-[11px] transition-all shadow-lg ${playerSubTab === 'lyrics' ? 'bg-purple-600 text-white' : 'bg-purple-900/40 text-purple-300'}`}
+              >
+                Lyrics
+              </button>
+
+              {/* Icon Tabs */}
+              <div className="flex items-center justify-around py-4 mt-2">
+                <button onClick={() => setPlayerSubTab('search')} className={`transition-all ${playerSubTab === 'search' ? 'text-blue-400 scale-125' : 'text-zinc-600'}`}>
+                  <Search className="w-8 h-8" />
+                </button>
+                <button onClick={() => setPlayerSubTab('fav')} className={`transition-all ${playerSubTab === 'fav' ? 'text-blue-400 scale-125' : 'text-zinc-600'}`}>
+                  <Heart className="w-8 h-8" />
+                </button>
+                <button onClick={() => setPlayerSubTab('queue')} className={`transition-all ${playerSubTab === 'queue' ? 'text-blue-400 scale-125' : 'text-zinc-600'}`}>
+                  <ListMusic className="w-8 h-8" />
+                </button>
+              </div>
+
+              {/* Content Area */}
+              <div className="flex-1 overflow-y-auto p-2 custom-scrollbar border-t border-white/5 bg-zinc-950/50">
                 {playerSubTab === 'search' && <MusicSearch />}
                 {playerSubTab === 'fav' && <FavoritesList />}
                 {playerSubTab === 'queue' && <QueueList />}
@@ -221,67 +276,81 @@ export default function Room() {
           </div>
         </div>
         
-        {/* COLUMN 2: Search (Top) & Tabs (Bottom) (Desktop) / Extras Tab (Mobile) */}
-        <div className={`${mobileTab === 'extras' ? 'flex' : 'hidden'} lg:flex flex-col gap-6 h-full overflow-hidden`}>
-          {/* Desktop Top: Music Search */}
-          <div className="hidden lg:flex flex-col h-[40%] bg-zinc-900/50 rounded-[2rem] border border-white/10 overflow-hidden shadow-xl backdrop-blur-md">
-             <div className="px-6 py-4 border-b border-white/10 flex justify-between items-center bg-white/5">
-                <span className="text-xs font-black uppercase tracking-[0.2em] text-zinc-400">Search & Play</span>
-                <Search className="w-4 h-4 text-zinc-500" />
+        {/* COLUMN 2: UNIFIED MUSIC HUB (Desktop) / Extras Tab (Mobile) */}
+        <div className={`${mobileTab === 'extras' ? 'flex' : 'hidden'} lg:flex flex-col lg:gap-6 h-full overflow-hidden`}>
+          {/* Unified Music Hub Card */}
+          <div className="flex-1 flex flex-col min-h-0 lg:bg-black/40 lg:rounded-[2.5rem] lg:border lg:border-white/10 lg:shadow-2xl lg:backdrop-blur-3xl overflow-hidden lg:ring-1 lg:ring-white/5 transition-all duration-500">
+             {/* Integrated Header: Tabs Switcher (Icons) */}
+             <div className="hidden lg:flex flex-col shrink-0 bg-white/5 border-b border-white/10">
+                <div className="flex px-6 gap-10 py-4 items-center">
+                <div className="flex items-center gap-3 bg-zinc-900/50 px-2.5 py-1.5 rounded-xl border border-white/5">
+                   <button 
+                     onClick={() => setPlayerSubTab('search')} 
+                     className={`transition-all hover:scale-110 ${playerSubTab === 'search' ? 'text-blue-400' : 'text-zinc-600'}`}
+                     title="Search Music"
+                   >
+                      <Search className={`w-4 h-4 ${playerSubTab === 'search' ? 'drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]' : ''}`} />
+                   </button>
+                   <button 
+                     onClick={() => setPlayerSubTab('fav')} 
+                     className={`transition-all hover:scale-110 ${playerSubTab === 'fav' ? 'text-pink-400' : 'text-zinc-600'}`}
+                     title="Liked Songs"
+                   >
+                      <Heart className={`w-4 h-4 ${playerSubTab === 'fav' ? 'fill-pink-400 drop-shadow-[0_0_8px_rgba(244,114,182,0.5)]' : ''}`} />
+                   </button>
+                   <button 
+                     onClick={() => setPlayerSubTab('queue')} 
+                     className={`transition-all hover:scale-110 ${playerSubTab === 'queue' ? 'text-purple-400' : 'text-zinc-600'}`}
+                     title="Music Queue"
+                   >
+                      <ListMusic className={`w-4 h-4 ${playerSubTab === 'queue' ? 'drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]' : ''}`} />
+                   </button>
+                </div>
+</div>
              </div>
-             <div className="flex-1 overflow-hidden">
-                <MusicSearch />
-             </div>
-          </div>
-
-          {/* Desktop Bottom: Lyrics/Fav/Queue | Mobile: Couple Features */}
-          <div className="flex-1 flex flex-col min-h-0 bg-white/5 rounded-[2rem] border border-white/10 overflow-hidden shadow-xl backdrop-blur-md">
-            <div className="flex border-b border-white/10 bg-white/5">
-               {/* These tabs are for Desktop Center Column Bottom Card */}
-               <button onClick={() => setPlayerSubTab('lyrics')} className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest transition-all ${playerSubTab === 'lyrics' ? 'text-white bg-white/10' : 'text-zinc-500'}`}>Lyrics</button>
-               <button onClick={() => setPlayerSubTab('fav')} className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest transition-all ${playerSubTab === 'fav' ? 'text-white bg-white/10' : 'text-zinc-500'}`}>Fav</button>
-               <button onClick={() => setPlayerSubTab('queue')} className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest transition-all ${playerSubTab === 'queue' ? 'text-white bg-white/10' : 'text-zinc-500'}`}>Queue</button>
-            </div>
             
+            {/* Scrollable Content Area */}
             <div className="flex-1 overflow-y-auto custom-scrollbar">
-              {/* Only show these if NOT in Extras tab on Mobile, OR if on Desktop */}
-              <div className="hidden lg:block h-full">
-                {playerSubTab === 'lyrics' && (
-                  <div className="p-6">
-                    {currentSong ? <SongLyrics currentSong={currentSong} /> : <div className="p-12 text-center text-zinc-500">Play a song to see lyrics</div>}
-                  </div>
-                )}
-                {playerSubTab === 'fav' && <FavoritesList />}
-                {playerSubTab === 'queue' && <QueueList />}
-              </div>
+                <div className="hidden lg:block h-full">
+                   {playerSubTab === 'search' && <MusicSearch />}
+                   {playerSubTab === 'fav' && <FavoritesList />}
+                   {playerSubTab === 'queue' && <QueueList />}
+                </div>
 
-              {/* Mobile: Show Couple Features in Extras tab */}
-              <div className="lg:hidden p-6">
-                 <div className="mb-4 text-xs font-black uppercase tracking-[0.2em] text-zinc-500">Room Extras</div>
-                 <CoupleFeatures username={state?.username} />
-              </div>
+                {/* Mobile View extras (fallback for this column) */}
+                <div className="lg:hidden p-4 h-full">
+                   <div className="mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-zinc-600">Room Extras</div>
+                   <CoupleFeatures username={state?.username} />
+                </div>
             </div>
           </div>
         </div>
 
-        {/* COLUMN 3: Chat (Top) & Support (Bottom) (Desktop) / Chat Tab (Mobile) */}
-        <div className={`${mobileTab === 'chat' ? 'flex' : 'hidden'} lg:flex flex-col gap-6 h-full overflow-hidden`}>
-           {/* Chat */}
-           <div className="flex-1 bg-black/20 rounded-[2rem] border border-white/5 shadow-2xl backdrop-blur-md overflow-hidden flex flex-col">
-              <div className="px-6 py-4 border-b border-white/10 flex justify-between items-center bg-white/5 lg:hidden">
-                <span className="text-xs font-black uppercase tracking-[0.2em] text-zinc-400">Room Chat</span>
-                <MessageSquare className="w-4 h-4 text-zinc-500" />
+        {/* COLUMN 3: Chat (Full Height) & Support (Desktop) / Chat Tab (Mobile) */}
+        <div className={`${mobileTab === 'chat' ? 'flex' : 'hidden'} lg:flex flex-col lg:gap-6 h-full overflow-hidden`}>
+           {/* Chat - Expanded Height */}
+           <div className="flex-[4] lg:bg-black/40 lg:rounded-[2.5rem] lg:border lg:border-white/10 lg:shadow-2xl lg:backdrop-blur-3xl overflow-hidden flex flex-col min-h-0 lg:ring-1 lg:ring-white/5">
+              <div className="px-5 lg:px-6 py-4 border-b border-white/5 flex justify-between items-center bg-white/5">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e] animate-pulse" />
+                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400">Live Messenger</span>
+                </div>
+                <MessageSquare className="w-3.5 h-3.5 text-zinc-600" />
               </div>
-              <Chat username={state?.username} />
+              <div className="flex-1 min-h-0 bg-zinc-950/20">
+                <Chat username={state?.username} />
+              </div>
            </div>
 
-           {/* Support */}
-           <div className="hidden lg:block shrink-0 bg-pink-500/5 border border-pink-500/10 rounded-[2rem] p-6 shadow-xl text-center">
-              <div className="mb-2 text-[10px] font-black uppercase tracking-[0.3em] text-pink-500/50">Advertisement</div>
-              <AdBanner slot="SIDEBAR_SLOT" style={{ display: 'block' }} />
-              <div className="mt-4 flex items-center justify-center gap-2 text-pink-400/60 uppercase text-[9px] font-black tracking-widest">
+           {/* Support / Ads - Professional Footer Look */}
+           <div className="hidden lg:block shrink-0 bg-white/5 border border-white/10 rounded-[2.5rem] p-6 shadow-xl text-center">
+              <div className="mb-3 text-[9px] font-black uppercase tracking-[0.4em] text-zinc-700">Advertisement</div>
+              <div className="flex items-center justify-center py-2">
+                <AdBanner slot="SIDEBAR_SLOT" style={{ display: 'block' }} />
+              </div>
+              <div className="mt-4 flex items-center justify-center gap-2 text-zinc-600 uppercase text-[8px] font-black tracking-widest opacity-30">
                 <Sparkles className="w-3 h-3" />
-                Support LoopLobby
+                <span>Support LoopLobby</span>
                 <Sparkles className="w-3 h-3" />
               </div>
            </div>
@@ -289,18 +358,18 @@ export default function Room() {
       </main>
 
 
-      <nav className="lg:hidden fixed bottom-0 left-0 w-full bg-black/80 backdrop-blur-xl border-t border-white/10 flex justify-around items-center p-3 z-50 pb-6">
-        <button onClick={() => setMobileTab('player')} className={`flex-1 flex flex-col items-center gap-1 transition-all ${mobileTab === 'player' ? 'text-pink-400 scale-110' : 'text-zinc-500'}`}>
-           <Music className="w-6 h-6" />
-           <span className="text-[10px] font-bold uppercase tracking-wider">Player</span>
+      <nav className="lg:hidden fixed bottom-0 left-0 w-full bg-black/90 backdrop-blur-2xl border-t border-white/5 flex justify-around items-center p-2 z-50 pb-5">
+        <button onClick={() => setMobileTab('player')} className={`flex-1 flex flex-col items-center gap-0.5 transition-all ${mobileTab === 'player' ? 'text-pink-400 scale-105' : 'text-zinc-500'}`}>
+           <Music className="w-5 h-5" />
+           <span className="text-[9px] font-black uppercase tracking-wider">Player</span>
         </button>
-        <button onClick={() => setMobileTab('extras')} className={`flex-1 flex flex-col items-center gap-1 transition-all ${mobileTab === 'extras' ? 'text-pink-400 scale-110' : 'text-zinc-500'}`}>
-           <Sparkles className="w-6 h-6" />
-           <span className="text-[10px] font-bold uppercase tracking-wider">Extras</span>
+        <button onClick={() => setMobileTab('extras')} className={`flex-1 flex flex-col items-center gap-0.5 transition-all ${mobileTab === 'extras' ? 'text-pink-400 scale-105' : 'text-zinc-500'}`}>
+           <Sparkles className="w-5 h-5" />
+           <span className="text-[9px] font-black uppercase tracking-wider">Extras</span>
         </button>
-        <button onClick={() => setMobileTab('chat')} className={`flex-1 flex flex-col items-center gap-1 transition-all ${mobileTab === 'chat' ? 'text-pink-400 scale-110' : 'text-zinc-500'}`}>
-           <MessageSquare className="w-6 h-6" />
-           <span className="text-[10px] font-bold uppercase tracking-wider">Chat</span>
+        <button onClick={() => setMobileTab('chat')} className={`flex-1 flex flex-col items-center gap-0.5 transition-all ${mobileTab === 'chat' ? 'text-pink-400 scale-105' : 'text-zinc-500'}`}>
+           <MessageSquare className="w-5 h-5" />
+           <span className="text-[9px] font-black uppercase tracking-wider">Chat</span>
         </button>
       </nav>
       </div>
