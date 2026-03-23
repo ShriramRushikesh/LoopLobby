@@ -60,14 +60,27 @@ function startEngine(setProgress, isPlayingRef) {
 
   function loop() {
     const now = Date.now();
-    // Only correct at most once every 3 seconds — prevents seek-buffering stutter
+    // drift check — prevents seek-buffering stutter
     if (_p.ref && isPlayingRef.current && _s.at && (now - _lastCorrection > 3000)) {
       try {
         const drift = _p.ref.getCurrentTime() - expectedTime(isPlayingRef);
-        // Only seek if drift is significant (>500ms) — small drift self-corrects via playback rate
-        if (Math.abs(drift) > 0.5) {
+        
+        // 1. Extreme drift (>2s): mandatory seek
+        if (Math.abs(drift) > 2.0) {
+          console.log(`[Sync] Heavy drift (${drift.toFixed(2)}s). Seeking...`);
           _p.ref.seekTo(expectedTime(isPlayingRef), true);
           _lastCorrection = now;
+          // Reset playback rate to normal after a hard seek
+          _p.ref.setPlaybackRate(1.0);
+        } 
+        // 2. Minor drift (0.2s - 2.0s): smooth rate adjustment (the "DJ" approach)
+        else if (Math.abs(drift) > 0.2) {
+          const rate = drift > 0 ? 0.95 : 1.05; // Too fast -> slow down, Too slow -> speed up
+          _p.ref.setPlaybackRate(rate);
+        } 
+        // 3. Perfectly in sync: normal rate
+        else {
+          _p.ref.setPlaybackRate(1.0);
         }
       } catch (_) {}
     }
@@ -249,17 +262,85 @@ export default function GlobalAudioPlayer() {
     };
   }, [socket]);
 
-  // MediaSession
+  // MediaSession & Background Play
   useEffect(() => {
     if (!('mediaSession' in navigator) || !currentSong) return;
-    navigator.mediaSession.metadata = new MediaMetadata({
-      title: currentSong.title, artist: currentSong.artist || 'LoopLobby Sync',
-      artwork: [{ src: currentSong.thumbnail, sizes: '512x512', type: 'image/png' }],
-    });
-    navigator.mediaSession.setActionHandler('play', () => { audioEngine.play(); setIsPlaying(true); socket?.emit('play', { roomId, currentTime: _p.ref?.getCurrentTime() || 0 }); });
-    navigator.mediaSession.setActionHandler('pause', () => { audioEngine.pause(); setIsPlaying(false); socket?.emit('pause', { roomId, currentTime: _p.ref?.getCurrentTime() || 0 }); });
-    navigator.mediaSession.setActionHandler('nexttrack', () => { if (queue?.length > 0) socket?.emit('change-song', { roomId, song: queue[0] }); });
-  }, [currentSong?.videoId]);
+
+    try {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: currentSong.title, 
+        artist: currentSong.artist || 'LoopLobby Sync',
+        album: 'LoopLobby',
+        artwork: [{ src: currentSong.thumbnail, sizes: '512x512', type: 'image/png' }],
+      });
+
+      navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
+
+      const updatePosition = () => {
+        if (_p.ref && 'setPositionState' in navigator.mediaSession) {
+          try {
+            const duration = _p.ref.getDuration();
+            const currentTime = _p.ref.getCurrentTime();
+            if (duration > 0 && currentTime >= 0 && currentTime <= duration) {
+              navigator.mediaSession.setPositionState({
+                duration: duration,
+                playbackRate: _p.ref.getPlaybackRate() || 1,
+                position: currentTime,
+              });
+            }
+          } catch (e) {}
+        }
+      };
+
+      const posIv = setInterval(updatePosition, 2000);
+
+      navigator.mediaSession.setActionHandler('play', () => { 
+        audioEngine.play(); setIsPlaying(true); 
+        socket?.emit('play', { roomId, currentTime: _p.ref?.getCurrentTime() || 0 }); 
+      });
+      navigator.mediaSession.setActionHandler('pause', () => { 
+        audioEngine.pause(); setIsPlaying(false); 
+        socket?.emit('pause', { roomId, currentTime: _p.ref?.getCurrentTime() || 0 }); 
+      });
+      navigator.mediaSession.setActionHandler('nexttrack', () => { 
+        if (queue?.length > 0) socket?.emit('change-song', { roomId, song: queue[0] }); 
+      });
+      navigator.mediaSession.setActionHandler('previoustrack', () => {
+        audioEngine.seek(0);
+        socket?.emit('seek', { roomId, currentTime: 0 });
+      });
+      navigator.mediaSession.setActionHandler('seekto', (details) => {
+        if (details.seekTime !== undefined) {
+          audioEngine.seek(details.seekTime);
+          socket?.emit('seek', { roomId, currentTime: details.seekTime });
+        }
+      });
+
+      return () => {
+        clearInterval(posIv);
+      };
+    } catch (e) {
+      console.error("MediaSession error:", e);
+    }
+  }, [currentSong?.videoId, isPlaying, queue?.length, socket, roomId]);
+
+  // Handle Visibility Change (Background Resumption)
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible' && isPlayingRef.current && _p.ref) {
+        // If we should be playing but the browser paused us (aggressive background killing)
+        const state = _p.ref.getPlayerState();
+        if (state !== 1 && state !== 3) { // Not playing or buffering
+          console.log("[GlobalPlayer] Background state detected as paused. Resyncing...");
+          const expected = expectedTime(isPlayingRef);
+          _p.ref.seekTo(expected, true);
+          _p.ref.playVideo();
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, []);
 
   const onPlayerReady = useCallback((event) => {
     _p.ref = event.target;
