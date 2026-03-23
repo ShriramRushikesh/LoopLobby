@@ -1,6 +1,6 @@
-import React from 'react';
 import { useRoomStore } from '../store/useRoomStore';
 import { Music, Play, Trash2 } from 'lucide-react';
+import AdBanner from './AdBanner';
 
 export default function QueueList() {
   const { room, socket, id: roomId } = useRoomStore();
@@ -16,12 +16,17 @@ export default function QueueList() {
 
   if (!room?.queue || room.queue.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 text-center">
+      <div className="flex flex-col items-center justify-center p-8 text-center h-full">
         <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4 border border-white/10">
           <Music className="w-8 h-8 text-zinc-600" />
         </div>
         <p className="text-zinc-500 font-medium tracking-tight">Your queue is empty.</p>
-        <p className="text-zinc-600 text-xs mt-1">Add some songs to keep the vibe alive!</p>
+        <p className="text-zinc-600 text-xs mt-1 mb-6">Add some songs to keep the vibe alive!</p>
+        
+        {/* AdSense Placement 3: Between-session (Empty Queue) */}
+        <div className="w-full mt-auto">
+          <AdBanner slot="QUEUE_EMPTY_SLOT" />
+        </div>
       </div>
     );
   }
@@ -55,6 +60,9 @@ export default function QueueList() {
           </button>
         </div>
       ))}
+      
+      {/* AdSense Placement 3: Bottom of Queue */}
+      <AdBanner slot="QUEUE_BOTTOM_SLOT" />
     </div>
   );
 }

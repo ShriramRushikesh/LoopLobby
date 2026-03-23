@@ -12,6 +12,7 @@ import MusicSearch from '../components/MusicSearch';
 import SongLyrics from '../components/SongLyrics';
 import QueueList from '../components/QueueList';
 import FavoritesList from '../components/FavoritesList';
+import AdBanner from '../components/AdBanner';
 import { Share2, Users, MessageCircle, Instagram, Music, Search, Sparkles, MessageSquare, Heart } from 'lucide-react';
 
 export default function Room() {
@@ -176,7 +177,7 @@ export default function Room() {
           </div>
         </header>
 
-      <main className="max-w-[1600px] mx-auto p-4 md:p-8 flex flex-col lg:grid lg:grid-cols-4 gap-6 h-[calc(100vh-140px)] lg:h-[calc(100vh-80px)] overflow-hidden">
+      <main className="max-w-[1800px] mx-auto p-4 md:p-8 flex flex-col lg:grid lg:grid-cols-5 gap-6 h-[calc(100vh-140px)] lg:h-[calc(100vh-80px)] overflow-hidden">
         {/* Mobile-Friendly Integrated View */}
         <div className="flex-1 overflow-hidden relative">
           
@@ -246,6 +247,21 @@ export default function Room() {
 
           <div className={`${mobileTab === 'chat' ? 'flex animate-in fade-in slide-in-from-bottom-4 duration-300' : 'hidden'} lg:flex h-full flex-col bg-black/20 rounded-3xl border border-white/5 backdrop-blur-md overflow-hidden lg:col-span-1`}>
             <Chat username={state?.username} />
+          </div>
+
+          {/* AdSense Placement 2: Sidebar Desktop (Hidden on Mobile) */}
+          <div className="hidden lg:flex lg:col-span-1 flex-col gap-4">
+            <div className="flex-1 bg-white/5 border border-white/10 rounded-3xl p-4 flex flex-col items-center justify-start overflow-hidden backdrop-blur-md">
+              <AdBanner slot="SIDEBAR_SLOT" style={{ display: 'block', width: '300px', height: '250px' }} />
+              
+              <div className="mt-8 p-6 bg-pink-500/10 border border-pink-500/20 rounded-2xl text-center">
+                <Sparkles className="w-8 h-8 text-pink-400 mx-auto mb-3" />
+                <h4 className="text-sm font-bold text-white mb-2 uppercase tracking-tighter">Support LoopLobby</h4>
+                <p className="text-[11px] text-zinc-400 leading-relaxed">
+                  Help us keep the music social and free for everyone by clicking an ad or sharing the link!
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </main>

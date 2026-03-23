@@ -1,4 +1,3 @@
 User-agent: *
 Allow: /
-
-Sitemap: https://looplobby.vercel.app/sitemap.xml
+Sitemap: https://loop-lobby.vercel.app/sitemap.xml
