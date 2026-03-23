@@ -177,90 +177,96 @@ export default function Room() {
           </div>
         </header>
 
-      <main className="max-w-[1800px] mx-auto p-4 md:p-8 flex flex-col lg:grid lg:grid-cols-5 gap-6 h-[calc(100vh-140px)] lg:h-[calc(100vh-80px)] overflow-hidden">
-        {/* Mobile-Friendly Integrated View */}
-        <div className="flex-1 overflow-hidden relative">
-          
-          {/* PLAYER TAB - Now contains Player, Search, Fav, Queue on Mobile */}
-          <div className={`${mobileTab === 'player' ? 'flex animate-in fade-in slide-in-from-bottom-4 duration-300' : 'hidden'} lg:flex lg:col-span-2 flex-col gap-4 h-full overflow-hidden`}>
-            
-            {/* Top Compact Player */}
-            <div className="shrink-0 lg:hidden">
-              <RoomPlayer isHost={state?.isHost} username={state?.username} compact={true} />
-            </div>
-            <div className="hidden lg:block shrink-0">
-              <RoomPlayer isHost={state?.isHost} username={state?.username} />
+      <main className="max-w-[2000px] mx-auto p-4 md:p-6 lg:p-8 flex flex-col lg:grid lg:grid-cols-5 gap-6 h-[calc(100vh-140px)] lg:h-[calc(100dvh-80px)] overflow-hidden">
+        {/* 1. PLAYER & EXTRAS - Col 1-2 */}
+        <div className={`${mobileTab === 'player' ? 'flex animate-in fade-in slide-in-from-bottom-4 duration-300' : 'hidden'} lg:flex lg:col-span-2 flex-col gap-4 h-full overflow-hidden`}>
+          {/* Top Compact Player (Mobile Only) */}
+          <div className="shrink-0 lg:hidden">
+            <RoomPlayer isHost={state?.isHost} username={state?.username} compact={true} />
+          </div>
+          {/* Main Player (Desktop) */}
+          <div className="hidden lg:block shrink-0">
+            <RoomPlayer isHost={state?.isHost} username={state?.username} />
+          </div>
+
+          {/* Middle Section - Real Lyrics (Mobile Only) */}
+          <div className="lg:hidden flex-none">
+            {currentSong && <SongLyrics currentSong={currentSong} />}
+          </div>
+
+          {/* Bottom Container - Subtabs for Mobile, Favorites/Queue for Desktop */}
+          <div className="flex-1 flex flex-col min-h-0 bg-blue-500/10 rounded-[2.5rem] border border-blue-500/20 overflow-hidden shadow-[0_0_40px_rgba(59,130,246,0.1)]">
+            {/* Sub-tab Switcher (Mobile Only) */}
+            <div className="lg:hidden flex border-b border-white/10 bg-blue-500/5">
+              <button 
+                onClick={() => setPlayerSubTab('search')}
+                className={`flex-1 flex flex-col items-center py-3 transition-all ${playerSubTab === 'search' ? 'text-blue-400 bg-white/5' : 'text-zinc-500'}`}
+              >
+                <Search className="w-6 h-6" />
+                <p className="text-[10px] font-black uppercase mt-1 tracking-widest">Search</p>
+              </button>
+              <button 
+                onClick={() => setPlayerSubTab('fav')}
+                className={`flex-1 flex flex-col items-center py-3 transition-all ${playerSubTab === 'fav' ? 'text-pink-400 bg-white/5' : 'text-zinc-500'}`}
+              >
+                <Heart className="w-6 h-6" />
+                <p className="text-[10px] font-black uppercase mt-1 tracking-widest">Fav</p>
+              </button>
+              <button 
+                onClick={() => setPlayerSubTab('queue')}
+                className={`flex-1 flex flex-col items-center py-3 transition-all ${playerSubTab === 'queue' ? 'text-purple-400 bg-white/5' : 'text-zinc-500'}`}
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                <p className="text-[10px] font-black uppercase mt-1 tracking-widest">Queue</p>
+              </button>
             </div>
 
-            {/* Middle Section - Real Lyrics (Mobile Only) */}
-            <div className="lg:hidden flex-none">
-              {currentSong && <SongLyrics currentSong={currentSong} />}
-            </div>
-
-            {/* Bottom Container - Subtabs for Mobile, Sidebar for Desktop */}
-            <div className="flex-1 flex flex-col min-h-0 bg-blue-500/10 rounded-[2.5rem] border border-blue-500/20 overflow-hidden shadow-[0_0_40px_rgba(59,130,246,0.1)]">
-              {/* Sub-tab Switcher (Mobile Only) */}
-              <div className="lg:hidden flex border-b border-white/10 bg-blue-500/5">
-                <button 
-                  onClick={() => setPlayerSubTab('search')}
-                  className={`flex-1 flex flex-col items-center py-3 transition-all ${playerSubTab === 'search' ? 'text-blue-400 bg-white/5' : 'text-zinc-500'}`}
-                >
-                  <Search className="w-6 h-6" />
-                  <p className="text-[10px] font-black uppercase mt-1 tracking-widest">Search</p>
-                </button>
-                <button 
-                  onClick={() => setPlayerSubTab('fav')}
-                  className={`flex-1 flex flex-col items-center py-3 transition-all ${playerSubTab === 'fav' ? 'text-pink-400 bg-white/5' : 'text-zinc-500'}`}
-                >
-                  <Heart className="w-6 h-6" />
-                  <p className="text-[10px] font-black uppercase mt-1 tracking-widest">Fav</p>
-                </button>
-                <button 
-                  onClick={() => setPlayerSubTab('queue')}
-                  className={`flex-1 flex flex-col items-center py-3 transition-all ${playerSubTab === 'queue' ? 'text-purple-400 bg-white/5' : 'text-zinc-500'}`}
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
-                  <p className="text-[10px] font-black uppercase mt-1 tracking-widest">Queue</p>
-                </button>
-              </div>
-
-              {/* Dynamic Content based on subtab */}
-              <div className="flex-1 overflow-y-auto custom-scrollbar p-2">
+            {/* Content box - Shows search/fav/queue list */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-2">
+              <div className="lg:hidden">
                 {playerSubTab === 'search' && <MusicSearch />}
                 {playerSubTab === 'fav' && <FavoritesList />}
                 {playerSubTab === 'queue' && <QueueList />}
               </div>
-            </div>
-
-            <div className="hidden lg:block shrink-0">
-              <CoupleFeatures username={state?.username} />
+              <div className="hidden lg:block space-y-4">
+                <QueueList />
+                <div className="h-px bg-white/5 mx-2" />
+                <FavoritesList />
+              </div>
             </div>
           </div>
-          
-          <div className={`${mobileTab === 'search' ? 'flex lg:hidden animate-in fade-in slide-in-from-bottom-4 duration-300' : 'hidden'} lg:flex h-full flex-col lg:col-span-1`}>
-            <MusicSearch />
-          </div>
 
-          <div className={`${mobileTab === 'extras' ? 'flex animate-in fade-in slide-in-from-bottom-4 duration-300' : 'hidden'} flex-col gap-6 h-full overflow-y-auto pb-32`}>
+          <div className="hidden lg:block shrink-0">
             <CoupleFeatures username={state?.username} />
           </div>
+        </div>
+        
+        {/* 2. SEARCH - Col 3 */}
+        <div className={`${mobileTab === 'search' ? 'flex lg:hidden animate-in fade-in slide-in-from-bottom-4 duration-300' : 'hidden'} lg:flex h-full flex-col lg:col-span-1 min-w-0`}>
+          <MusicSearch />
+        </div>
 
-          <div className={`${mobileTab === 'chat' ? 'flex animate-in fade-in slide-in-from-bottom-4 duration-300' : 'hidden'} lg:flex h-full flex-col bg-black/20 rounded-3xl border border-white/5 backdrop-blur-md overflow-hidden lg:col-span-1`}>
-            <Chat username={state?.username} />
-          </div>
+        {/* 3. EXTRAS (Mobile Tab Only) */}
+        <div className={`${mobileTab === 'extras' ? 'flex lg:hidden animate-in fade-in slide-in-from-bottom-4 duration-300' : 'hidden'} flex-col gap-6 h-full overflow-y-auto pb-32`}>
+          <CoupleFeatures username={state?.username} />
+        </div>
 
-          {/* AdSense Placement 2: Sidebar Desktop (Hidden on Mobile) */}
-          <div className="hidden lg:flex lg:col-span-1 flex-col gap-4">
-            <div className="flex-1 bg-white/5 border border-white/10 rounded-3xl p-4 flex flex-col items-center justify-start overflow-hidden backdrop-blur-md">
-              <AdBanner slot="SIDEBAR_SLOT" style={{ display: 'block', width: '300px', height: '250px' }} />
-              
-              <div className="mt-8 p-6 bg-pink-500/10 border border-pink-500/20 rounded-2xl text-center">
-                <Sparkles className="w-8 h-8 text-pink-400 mx-auto mb-3" />
-                <h4 className="text-sm font-bold text-white mb-2 uppercase tracking-tighter">Support LoopLobby</h4>
-                <p className="text-[11px] text-zinc-400 leading-relaxed">
-                  Help us keep the music social and free for everyone by clicking an ad or sharing the link!
-                </p>
-              </div>
+        {/* 4. CHAT - Col 4 */}
+        <div className={`${mobileTab === 'chat' ? 'flex lg:hidden animate-in fade-in slide-in-from-bottom-4 duration-300' : 'hidden'} lg:flex h-full flex-col bg-black/20 rounded-3xl border border-white/5 backdrop-blur-md overflow-hidden lg:col-span-1 min-w-0`}>
+          <Chat username={state?.username} />
+        </div>
+
+        {/* 5. ADS & SUPPORT - Col 5 */}
+        <div className="hidden lg:flex lg:col-span-1 flex-col gap-4 overflow-hidden">
+          <div className="flex-1 bg-white/5 border border-white/10 rounded-3xl p-4 flex flex-col items-center justify-start overflow-hidden backdrop-blur-md">
+            <AdBanner slot="SIDEBAR_SLOT" style={{ display: 'block', width: '100%', height: '250px' }} />
+            
+            <div className="mt-auto p-6 bg-pink-500/10 border border-pink-500/20 rounded-2xl text-center w-full">
+              <Sparkles className="w-8 h-8 text-pink-400 mx-auto mb-3" />
+              <h4 className="text-sm font-bold text-white mb-2 uppercase tracking-tighter">Support LoopLobby</h4>
+              <p className="text-[11px] text-zinc-400 leading-relaxed line-clamp-3">
+                Help us keep the music social and free for everyone by clicking an ad or sharing!
+              </p>
             </div>
           </div>
         </div>
