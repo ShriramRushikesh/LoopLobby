@@ -54,7 +54,7 @@ export default function Home() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Enter your nickname"
-                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-pink-500/50 transition-all"
+                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-base placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-pink-500/50 transition-all"
                 required
               />
             </div>
@@ -66,7 +66,7 @@ export default function Home() {
                 value={roomId}
                 onChange={(e) => setRoomId(e.target.value.toUpperCase())}
                 placeholder="Leave blank to create a room"
-                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all uppercase"
+                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-base placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all uppercase"
                 maxLength={6}
               />
             </div>
