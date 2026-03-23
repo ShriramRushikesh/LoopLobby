@@ -3,31 +3,31 @@ import React from 'react';
 export default function Logo({ className = "w-32 h-auto text-white" }) {
   return (
     <svg 
-      viewBox="0 0 200 80" 
+      viewBox="0 0 280 85" 
       fill="currentColor" 
       xmlns="http://www.w3.org/2000/svg" 
       className={className}
     >
       {/* "LoopLobby" Main Text */}
       <text 
-        x="10" 
-        y="55" 
-        fontFamily="Arial, sans-serif" 
+        x="5" 
+        y="50" 
+        fontFamily="sans-serif" 
         fontWeight="900" 
-        fontSize="54" 
-        letterSpacing="-3"
+        fontSize="48" 
+        letterSpacing="-2"
       >
         LoopLobby
       </text>
       
       {/* "sync vibes" Subtitle */}
       <text 
-        x="65" 
+        x="60" 
         y="75" 
-        fontFamily="Arial, sans-serif" 
+        fontFamily="sans-serif" 
         fontWeight="800" 
         fontSize="16" 
-        letterSpacing="-1"
+        letterSpacing="-0.5"
       >
         sync vibes
       </text>
