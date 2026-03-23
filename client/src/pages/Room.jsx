@@ -32,8 +32,6 @@ export default function Room() {
   const setTyping = useRoomStore(s => s.setTyping);
   const updateRoomQueue = useRoomStore(s => s.updateRoomQueue);
   const updateRoomFavorites = useRoomStore(s => s.updateRoomFavorites);
-  const updateCurrentSong = useRoomStore(s => s.updateCurrentSong);
-  const updateSongProgress = useRoomStore(s => s.updateSongProgress);
   const [isShaking, setIsShaking] = useState(false);
   const [copied, setCopied] = useState(false);
   const [mobileTab, setMobileTab] = useState('player');
@@ -60,8 +58,7 @@ export default function Room() {
     
     newSocket.on('queue_updated', updateRoomQueue);
     newSocket.on('favorites_updated', updateRoomFavorites);
-    newSocket.on('sync-song', updateCurrentSong);
-    newSocket.on('sync-progress', updateSongProgress);
+    // sync-song and sync-progress are handled by GlobalAudioPlayer to avoid redundant state updates
     
     newSocket.on('receive_message', addChatMessage);
     newSocket.on('receive_love_note', addLoveNote);

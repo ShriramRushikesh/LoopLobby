@@ -7,15 +7,13 @@ import { audioEngine } from './GlobalAudioPlayer';
 
 export default function RoomPlayer({ isHost, compact = false }) {
   const { id: roomId } = useParams();
-  const {
-    room,
-    socket,
-    currentSong,
-    isPlaying,
-    progress,
-    isAudible,
-    setIsPlaying,
-  } = useRoomStore();
+  const room = useRoomStore(s => s.room);
+  const socket = useRoomStore(s => s.socket);
+  const currentSong = useRoomStore(s => s.currentSong);
+  const isPlaying = useRoomStore(s => s.isPlaying);
+  const progress = useRoomStore(s => s.progress);
+  const isAudible = useRoomStore(s => s.isAudible);
+  const setIsPlaying = useRoomStore(s => s.setIsPlaying);
 
   const hasSong = !!currentSong;
   const duration = currentSong?.durationMs ? currentSong.durationMs / 1000 : 0;

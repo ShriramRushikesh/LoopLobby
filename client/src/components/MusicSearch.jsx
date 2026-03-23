@@ -39,7 +39,9 @@ const SongItem = memo(({ song, isQueue, onPlay, onAdd, onToggleFav, isFav, isRec
 ));
 
 const MusicSearch = () => {
-  const { room, socket, recentlyPlayed } = useRoomStore();
+  const room = useRoomStore(s => s.room);
+  const socket = useRoomStore(s => s.socket);
+  const recentlyPlayed = useRoomStore(s => s.recentlyPlayed);
   const [query, setQuery] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   
