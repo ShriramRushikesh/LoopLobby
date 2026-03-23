@@ -9,6 +9,7 @@ let _raf = null;
 let _ticker = null;
 let _started = false;
 let _lastCorrection = 0; 
+let _loadTimer = null;
 
 
 export const audioEngine = {
@@ -76,16 +77,23 @@ function startEngine(setProgress, isPlayingRef) {
 
   _ticker = setInterval(() => {
     try {
-      if (_p.ref && isPlayingRef.current) setProgress(_p.ref.getCurrentTime());
+      // isAudible is passed from the store to the component, so we need to check it from the store state
+      // But startEngine is outside. We'll pass a ref or check window variables if needed.
+      // Better: check the player's own internal state and a local static flag.
+      if (_p.ref && isPlayingRef.current) {
+        // Only update progress if actually playing and not in the first 3s of loading
+        const state = _p.ref.getPlayerState();
+        if (state === 1) setProgress(_p.ref.getCurrentTime());
+      }
     } catch (_) {}
   }, 1000);
 }
 
 export default function GlobalAudioPlayer() {
   const {
-    currentSong, isPlaying, volume,
+    currentSong, isPlaying, volume, isAudible,
     setProgress, setIsPlaying, setCurrentSong, setLatency, setDuration, updateCurrentSong,
-    socket, room, queue,
+    setIsAudible, socket, room, queue,
   } = useRoomStore();
 
   const roomId = room?.roomId || room?.id;
@@ -106,23 +114,49 @@ export default function GlobalAudioPlayer() {
     const vid = currentSong?.videoId || currentSong?.id;
     if (!vid) return;
 
+    // Reset audible state immediately on song change
+    if (prevVideoId.current !== vid) {
+      setIsAudible(false);
+      prevVideoId.current = vid;
+    }
+
     if (_p.ref) {
-      const wait = _started ? 0 : 500; 
-      const timer = setTimeout(() => {
-        const startAt = Math.max(0, expectedTime(isPlayingRef));
-        console.log(`[GlobalPlayer] Loading ${vid} at ${startAt}s`);
-        try {
-          _p.ref.loadVideoById({ videoId: vid, startSeconds: startAt });
-          if (_started) {
-            _p.ref.unMute(); 
-            _p.ref.setVolume(volumeRef.current * 100);
-            _p.ref.playVideo();
-          }
-        } catch (e) {
-          console.error("[GlobalPlayer] Load error:", e);
+      if (_loadTimer) clearTimeout(_loadTimer);
+
+      const wait = 3000; // 3 second mandatory pre-load/intro delay
+      
+      const startAt = Math.max(0, expectedTime(isPlayingRef));
+      console.log(`[GlobalPlayer] Pre-loading ${vid} at ${startAt}s (3s delay starting...)`);
+
+      try {
+        // Load muted first to allow buffering without audio-jump
+        _p.ref.mute();
+        _p.ref.loadVideoById({ videoId: vid, startSeconds: startAt });
+        _p.ref.pauseVideo(); // Buffer while paused or play muted? Let's play muted if started.
+        
+        if (_started) {
+          _p.ref.playVideo();
         }
-      }, wait);
-      return () => clearTimeout(timer);
+
+        _loadTimer = setTimeout(() => {
+          console.log(`[GlobalPlayer] 3s delay over, enabling audio for ${vid}`);
+          try {
+            if (_started) {
+              _p.ref.unMute(); 
+              _p.ref.setVolume(volumeRef.current * 100);
+              _p.ref.playVideo();
+              setIsAudible(true);
+            }
+          } catch (e) {}
+        }, wait);
+
+      } catch (e) {
+        console.error("[GlobalPlayer] Load error:", e);
+      }
+
+      return () => {
+        if (_loadTimer) clearTimeout(_loadTimer);
+      };
     }
   }, [currentSong?.videoId, currentSong?.id, isPlayingRef]);
 

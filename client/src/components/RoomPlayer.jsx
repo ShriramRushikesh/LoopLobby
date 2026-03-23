@@ -13,6 +13,7 @@ export default function RoomPlayer({ isHost, compact = false }) {
     currentSong,
     isPlaying,
     progress,
+    isAudible,
     setIsPlaying,
   } = useRoomStore();
 
@@ -67,8 +68,8 @@ export default function RoomPlayer({ isHost, compact = false }) {
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
-  // Progress percentage — use local seekValueRef while dragging for smooth UX
-  const displayProgress = seekingRef.current ? seekValueRef.current : progress;
+  // Progress percentage — only move if audible AND not seeking
+  const displayProgress = seekingRef.current ? seekValueRef.current : (isAudible ? progress : 0);
   const pct = duration > 0 ? (displayProgress / duration) * 100 : 0;
 
   if (compact) {
@@ -98,9 +99,11 @@ export default function RoomPlayer({ isHost, compact = false }) {
 
           <div className="flex-1 min-w-0 flex flex-col justify-center">
             <h2 className="text-lg font-bold text-white leading-tight line-clamp-1">
-              {currentSong?.title || 'Nothing playing'}
+              {hasSong && !isAudible ? 'Preparing Vibe...' : (currentSong?.title || 'Nothing playing')}
             </h2>
-            <p className="text-zinc-400 text-sm line-clamp-1 font-medium">{currentSong?.artist || 'Search a song'}</p>
+            <p className="text-zinc-400 text-sm line-clamp-1 font-medium">
+              {hasSong && !isAudible ? 'Buffering 3s for perfect sync' : (currentSong?.artist || 'Search a song')}
+            </p>
             
             {/* Seekbar on the right */}
             <div className="mt-2 relative h-1.5 w-full bg-white/10 rounded-full overflow-hidden flex items-center">
@@ -186,9 +189,11 @@ export default function RoomPlayer({ isHost, compact = false }) {
         <div className="flex-1 w-full space-y-6 flex flex-col justify-center">
           <div className="text-center md:text-left space-y-1">
             <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-1 leading-tight line-clamp-2">
-              {currentSong?.title || 'Nothing playing'}
+              {hasSong && !isAudible ? 'Preparing Vibe...' : (currentSong?.title || 'Nothing playing')}
             </h2>
-            <p className="text-zinc-400 text-base md:text-lg line-clamp-1 font-medium">{currentSong?.artist || 'Search and play a song'}</p>
+            <p className="text-zinc-400 text-base md:text-lg line-clamp-1 font-medium">
+              {hasSong && !isAudible ? 'Buffering 3s for perfect sync' : (currentSong?.artist || 'Search and play a song')}
+            </p>
           </div>
 
           {/* Progress Bar — fires only on release */}
@@ -214,7 +219,7 @@ export default function RoomPlayer({ isHost, compact = false }) {
               />
             </div>
             <div className="flex justify-between text-xs font-medium text-zinc-500">
-              <span>{formatTime(displayProgress)}</span>
+              <span>{isAudible ? formatTime(displayProgress) : '--:--'}</span>
               <span>{currentSong?.durationText || formatTime(duration) || '0:00'}</span>
             </div>
           </div>

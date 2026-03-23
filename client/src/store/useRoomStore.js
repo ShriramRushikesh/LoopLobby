@@ -14,6 +14,7 @@ export const useRoomStore = create((set) => ({
   volume: 1,
   progress: 0,
   duration: 0,
+  isAudible: false,
   currentSong: null,
   queue: [],
   members: [],
@@ -41,6 +42,7 @@ export const useRoomStore = create((set) => ({
   setVolume: (volume) => set({ volume }),
   setProgress: (progress) => set({ progress }),
   setDuration: (duration) => set({ duration }),
+  setIsAudible: (isAudible) => set({ isAudible }),
   setCurrentSong: (currentSong) => set({ currentSong }),
   updateCurrentSong: (song) => set((state) => ({
     room: state.room ? { ...state.room, song } : state.room,
