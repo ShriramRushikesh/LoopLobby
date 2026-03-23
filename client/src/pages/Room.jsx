@@ -13,7 +13,7 @@ import SongLyrics from '../components/SongLyrics';
 import QueueList from '../components/QueueList';
 import FavoritesList from '../components/FavoritesList';
 import AdBanner from '../components/AdBanner';
-import { Share2, Users, MessageCircle, Instagram, Music, Search, Sparkles, MessageSquare, Heart } from 'lucide-react';
+import { Share2, Users, MessageCircle, Instagram, Music, Search, Sparkles, MessageSquare, Heart, ListMusic } from 'lucide-react';
 
 export default function Room() {
   const { id } = useParams();
