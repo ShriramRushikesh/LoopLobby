@@ -37,44 +37,24 @@ export default function Home() {
       >
         <div className="text-center mb-10 relative">
           {/* Indian Pride & Header Thought */}
-          <motion.div 
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500/5 via-white/5 to-green-500/5 border border-white/10 px-5 py-2.5 rounded-full mb-8 backdrop-blur-xl shadow-2xl scale-105"
-          >
+          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500/5 via-white/5 to-green-500/5 border border-white/10 px-5 py-2.5 rounded-full mb-8 backdrop-blur-xl shadow-2xl scale-105">
             <span className="text-sm italic text-zinc-400 font-medium">✨ "One Vibe. One Sync."</span>
             <span className="text-zinc-800 mx-2">|</span>
             <span className="text-[10px] font-black uppercase tracking-widest text-white flex items-center gap-2 group cursor-default">
               Made in Solapur 🇮🇳
             </span>
-          </motion.div>
+          </div>
 
-          <motion.div 
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="flex justify-center mb-6"
-          >
+          <div className="flex justify-center mb-6">
             <h1 className="sr-only">LoopLobby | sync vibes everywhere</h1>
-            <Logo className="w-56 h-auto text-pink-500" />
-          </motion.div>
-          <motion.p 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="text-zinc-400 text-lg mb-2 max-w-md mx-auto font-medium"
-          >
+            <Logo className="w-56 h-auto text-pink-500 drop-shadow-[0_0_15px_rgba(236,72,153,0.5)]" />
+          </div>
+          <p className="text-zinc-400 text-lg mb-2 max-w-md mx-auto font-medium">
             Sync your soul with LoopLobby.
-          </motion.p>
+          </p>
         </div>
 
-        <motion.div 
-          initial={{ y: 30, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.6 }}
-          className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-xl shadow-2xl"
-        >
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-xl shadow-2xl">
           <form onSubmit={handleJoin} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-zinc-400 mb-1">Your Name</label>

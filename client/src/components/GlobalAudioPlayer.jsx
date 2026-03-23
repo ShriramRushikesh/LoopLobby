@@ -143,7 +143,7 @@ export default function GlobalAudioPlayer() {
   const {
     currentSong, isPlaying, volume, isAudible,
     setProgress, setIsPlaying, setCurrentSong, setLatency, setDuration,
-    setIsAudible, socket, room, queue, updateCurrentSong,
+    setIsAudible, socket, room, queue,
   } = useRoomStore();
 
   const roomId = room?.roomId || room?.id;
@@ -308,7 +308,7 @@ export default function GlobalAudioPlayer() {
       if (!song) return;
       _s.time = 0;
       _s.at = serverTime;
-      updateCurrentSong(song);
+      setCurrentSong(song);
       setIsPlaying(true);
       setProgress(0);
     };
@@ -326,7 +326,7 @@ export default function GlobalAudioPlayer() {
       const curVid = currentSong?.videoId || currentSong?.id;
       if (pulse.song_id !== curVid) {
         console.warn('[AntiGravity] Pulse song mismatch, loading:', pulse.song_id);
-        updateCurrentSong({
+        setCurrentSong({
           videoId: pulse.song_id,
           title: pulse.title,
           artist: pulse.artist,
