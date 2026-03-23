@@ -71,48 +71,48 @@ export default function MusicSearch() {
   };
 
   return (
-      <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-        <div className="space-y-4">
-          <form onSubmit={handleSearch} className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-            <input 
-              type="text" 
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search songs on YouTube..." 
-              className="w-full bg-black/50 border border-white/10 rounded-full py-2 pl-10 pr-4 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-pink-500/50 transition-colors"
-            />
-          </form>
-          
-          <div className="space-y-1">
-            {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-6 h-6 text-pink-500 animate-spin" />
-              </div>
-            ) : results.length > 0 ? (
-              results.map(song => (
-                <SongItem 
-                  key={song.videoId} 
-                  song={song} 
-                  onPlay={playSong} 
-                  onAdd={addToQueue} 
-                  onToggleFav={toggleFavorite}
-                  isFav={isFavorite(song.videoId)}
-                />
-              ))
-            ) : searchTerm ? (
-              <div className="text-center py-12 text-zinc-500 flex flex-col items-center gap-3">
-                <Music className="w-12 h-12 opacity-20" />
-                <p className="text-sm">No results found for "{searchTerm}"</p>
-              </div>
-            ) : (
-              <div className="text-center py-12 text-zinc-500 flex flex-col items-center gap-3">
-                <Music className="w-12 h-12 opacity-20" />
-                <p className="text-sm">Search for a song to play</p>
-              </div>
-            )}
-          </div>
+    <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+      <div className="space-y-4">
+        <form onSubmit={handleSearch} className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+          <input 
+            type="text" 
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search songs on YouTube..." 
+            className="w-full bg-black/50 border border-white/10 rounded-full py-2 pl-10 pr-4 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-pink-500/50 transition-colors"
+          />
+        </form>
+        
+        <div className="space-y-1">
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 text-pink-500 animate-spin" />
+            </div>
+          ) : results.length > 0 ? (
+            results.map(song => (
+              <SongItem 
+                key={song.videoId} 
+                song={song} 
+                onPlay={playSong} 
+                onAdd={addToQueue} 
+                onToggleFav={toggleFavorite}
+                isFav={isFavorite(song.videoId)}
+              />
+            ))
+          ) : searchTerm ? (
+            <div className="text-center py-12 text-zinc-500 flex flex-col items-center gap-3">
+              <Music className="w-12 h-12 opacity-20" />
+              <p className="text-sm">No results found for "{searchTerm}"</p>
+            </div>
+          ) : (
+            <div className="text-center py-12 text-zinc-500 flex flex-col items-center gap-3">
+              <Music className="w-12 h-12 opacity-20" />
+              <p className="text-sm">Search for a song to play</p>
+            </div>
+          )}
         </div>
       </div>
-    );
+    </div>
+  );
 }

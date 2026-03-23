@@ -84,7 +84,7 @@ function startEngine(setProgress, isPlayingRef) {
 export default function GlobalAudioPlayer() {
   const {
     currentSong, isPlaying, volume,
-    setProgress, setIsPlaying, setCurrentSong, setLatency, setDuration,
+    setProgress, setIsPlaying, setCurrentSong, setLatency, setDuration, updateCurrentSong,
     socket, room, queue,
   } = useRoomStore();
 
@@ -102,15 +102,14 @@ export default function GlobalAudioPlayer() {
     return () => { cancelAnimationFrame(_raf); clearInterval(_ticker); };
   }, []);
 
-  // When `currentSong` changes → use loadVideoById if player is already ready (fast!)
   useEffect(() => {
+    const vid = currentSong?.videoId || currentSong?.id;
+    if (!vid) return;
+
     if (_p.ref) {
       const wait = _started ? 0 : 500; 
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         const startAt = Math.max(0, expectedTime(isPlayingRef));
-        const vid = currentSong?.videoId || currentSong?.id;
-        if (!vid) return;
-
         console.log(`[GlobalPlayer] Loading ${vid} at ${startAt}s`);
         try {
           _p.ref.loadVideoById({ videoId: vid, startSeconds: startAt });
@@ -123,8 +122,9 @@ export default function GlobalAudioPlayer() {
           console.error("[GlobalPlayer] Load error:", e);
         }
       }, wait);
+      return () => clearTimeout(timer);
     }
-  }, [currentSong?.videoId, currentSong?.id, _started, isPlayingRef, updateCurrentSong]);
+  }, [currentSong?.videoId, currentSong?.id, isPlayingRef]);
 
   // Latency
   useEffect(() => {
