@@ -128,7 +128,7 @@ export default function Room() {
     <div 
       onClick={handleInteraction}
       onTouchStart={handleInteraction}
-      className={`min-h-screen transition-colors duration-1000 relative ${bgStyles[moodMode]} ${isShaking ? 'animate-[shake_0.2s_ease-in-out_4]' : ''}`}
+      className={`min-h-[100dvh] transition-colors duration-1000 relative ${bgStyles[moodMode]} ${isShaking ? 'animate-[shake_0.2s_ease-in-out_4]' : ''}`}
     >
       
       {/* Dynamic Sunset Background */}
@@ -221,7 +221,7 @@ export default function Room() {
           </div>
         </header>
 
-      <main className={`max-w-[1600px] mx-auto ${['chat', 'extras'].includes(mobileTab) ? 'p-0' : 'p-4'} lg:p-6 flex flex-col lg:grid lg:grid-cols-[1.3fr_0.85fr_0.85fr] gap-6 h-[calc(100vh-140px)] lg:h-[calc(100vh-80px)] overflow-hidden`}>
+      <main className={`max-w-[1600px] mx-auto ${['chat', 'extras'].includes(mobileTab) ? 'p-0' : 'p-4'} lg:p-6 flex flex-col lg:grid lg:grid-cols-[1.3fr_0.85fr_0.85fr] gap-6 h-[calc(100dvh-145px)] lg:h-[calc(100dvh-80px)] overflow-hidden`}>
         
         {/* COLUMN 1: Room Extra (Desktop) / Player Tab (Mobile) */}
         <div className={`${mobileTab === 'player' ? 'flex' : 'hidden'} lg:flex flex-col gap-6 h-full overflow-hidden`}>
@@ -367,18 +367,21 @@ export default function Room() {
       </main>
 
 
-      <nav className="lg:hidden fixed bottom-0 left-0 w-full bg-black/90 backdrop-blur-2xl border-t border-white/5 flex justify-around items-center p-2 z-50 pb-5">
-        <button onClick={() => setMobileTab('player')} className={`flex-1 flex flex-col items-center gap-0.5 transition-all ${mobileTab === 'player' ? 'text-pink-400 scale-105' : 'text-zinc-500'}`}>
+      <nav className="lg:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-sm bg-black/60 backdrop-blur-3xl border border-white/10 flex justify-around items-center p-3 z-50 rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.5)] ring-1 ring-white/5">
+        <button onClick={() => setMobileTab('player')} className={`relative flex-1 flex flex-col items-center gap-1 transition-all ${mobileTab === 'player' ? 'text-pink-400 scale-110' : 'text-zinc-500 hover:text-zinc-300'}`}>
            <Music className="w-5 h-5" />
            <span className="text-[9px] font-black uppercase tracking-wider">Player</span>
+           {mobileTab === 'player' && <motion.div layoutId="nav-pill" className="absolute -bottom-1 w-1 h-1 bg-pink-500 rounded-full shadow-[0_0_8px_#ec4899]" />}
         </button>
-        <button onClick={() => setMobileTab('extras')} className={`flex-1 flex flex-col items-center gap-0.5 transition-all ${mobileTab === 'extras' ? 'text-pink-400 scale-105' : 'text-zinc-500'}`}>
+        <button onClick={() => setMobileTab('extras')} className={`relative flex-1 flex flex-col items-center gap-1 transition-all ${mobileTab === 'extras' ? 'text-pink-400 scale-110' : 'text-zinc-500 hover:text-zinc-300'}`}>
            <Sparkles className="w-5 h-5" />
            <span className="text-[9px] font-black uppercase tracking-wider">Extras</span>
+           {mobileTab === 'extras' && <motion.div layoutId="nav-pill" className="absolute -bottom-1 w-1 h-1 bg-pink-500 rounded-full shadow-[0_0_8px_#ec4899]" />}
         </button>
-        <button onClick={() => setMobileTab('chat')} className={`flex-1 flex flex-col items-center gap-0.5 transition-all ${mobileTab === 'chat' ? 'text-pink-400 scale-105' : 'text-zinc-500'}`}>
+        <button onClick={() => setMobileTab('chat')} className={`relative flex-1 flex flex-col items-center gap-1 transition-all ${mobileTab === 'chat' ? 'text-pink-400 scale-110' : 'text-zinc-500 hover:text-zinc-300'}`}>
            <MessageSquare className="w-5 h-5" />
            <span className="text-[9px] font-black uppercase tracking-wider">Chat</span>
+           {mobileTab === 'chat' && <motion.div layoutId="nav-pill" className="absolute -bottom-1 w-1 h-1 bg-pink-500 rounded-full shadow-[0_0_8px_#ec4899]" />}
         </button>
       </nav>
       </div>

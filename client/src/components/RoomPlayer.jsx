@@ -82,28 +82,31 @@ export default function RoomPlayer({ isHost, compact = false }) {
         )}
         
         <div className="relative z-10 flex items-center gap-4">
-          <div className="w-20 h-20 rounded-full bg-zinc-800 shadow-[0_0_20px_rgba(236,72,153,0.2)] overflow-hidden flex-shrink-0 relative border border-white/10 p-1">
-            <div className="w-full h-full rounded-full overflow-hidden">
-              {hasSong && currentSong.thumbnail ? (
-                <img src={currentSong.thumbnail} alt="thumbnail" className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-zinc-800 to-black flex items-center justify-center">
-                  <Music className="w-4 h-4 text-white/20" />
-                </div>
+          <div className="relative group">
+            <div className={`absolute -inset-2 bg-pink-500/20 rounded-full blur-xl transition-opacity duration-1000 ${isPlaying ? 'opacity-100 animate-glow-pulse' : 'opacity-0'}`} />
+            <div className={`w-20 h-20 rounded-full bg-zinc-800 shadow-[0_0_30px_rgba(0,0,0,0.5)] overflow-hidden flex-shrink-0 relative border border-white/10 p-1 transition-transform duration-700 ${isPlaying ? 'animate-slow-rotate' : ''}`}>
+              <div className="w-full h-full rounded-full overflow-hidden">
+                {hasSong && currentSong.thumbnail ? (
+                  <img src={currentSong.thumbnail} alt="thumbnail" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-zinc-800 to-black flex items-center justify-center">
+                    <Music className="w-4 h-4 text-white/20" />
+                  </div>
+                )}
+              </div>
+              {isPlaying && (
+                <div className="absolute inset-0 border-2 border-pink-500/50 rounded-full animate-ping opacity-20" />
               )}
             </div>
-            {isPlaying && (
-              <div className="absolute inset-0 border-2 border-pink-500/50 rounded-full animate-ping opacity-20" />
-            )}
           </div>
 
           <div className="flex-1 min-w-0 flex flex-col justify-center">
-            <div className="h-[34px] flex flex-col justify-center overflow-hidden">
+            <div className="h-[38px] flex flex-col justify-center overflow-hidden">
               <h2 className="text-sm font-black text-white leading-tight line-clamp-1 italic tracking-tight uppercase">
                 {hasSong ? (currentSong?.title || 'Loading...') : 'Nothing playing'}
               </h2>
-              <p className="text-pink-500/80 text-[8px] font-black uppercase tracking-[0.2em] line-clamp-1">
-                {hasSong ? currentSong?.artist : 'Search a song'}
+              <p className="text-pink-500 font-black uppercase tracking-[0.25em] text-[7px] mt-0.5 line-clamp-1 opacity-80">
+                {hasSong ? currentSong?.artist : 'Vibe with LoopLobby'}
               </p>
             </div>
             
