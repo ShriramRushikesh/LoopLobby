@@ -3,12 +3,13 @@ import { Search, Play, Plus, Heart, Music, ListMusic, Loader2 } from 'lucide-rea
 import { useRoomStore } from '../store/useRoomStore';
 import { useQuery } from '@tanstack/react-query';
 
-const SongItem = memo(({ song, isQueue, onPlay, onAdd, onToggleFav, isFav }) => (
+const SongItem = memo(({ song, index, isQueue, onPlay, onAdd, onToggleFav, isFav }) => (
   <div 
     className="flex items-center gap-3 p-2 hover:bg-white/5 rounded-lg group transition-colors cursor-pointer"
     onClick={() => onPlay(song)}
   >
-    <div className="relative w-12 h-12 rounded-md overflow-hidden flex-shrink-0">
+    <div className="text-[10px] font-bold text-zinc-600 w-4 text-right shrink-0">{index + 1}</div>
+    <div className="relative w-10 h-10 rounded-md overflow-hidden flex-shrink-0">
       <img src={song.thumbnail} alt={song.title} className="w-full h-full object-cover" />
       <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
         <Play className="w-5 h-5 text-white fill-current" />
@@ -99,10 +100,11 @@ export default function MusicSearch() {
               <Loader2 className="w-6 h-6 text-pink-500 animate-spin" />
             </div>
           ) : results.length > 0 ? (
-            results.map(song => (
+            results.map((song, index) => (
               <SongItem 
                 key={song.videoId} 
                 song={song} 
+                index={index}
                 onPlay={playSong} 
                 onAdd={addToQueue} 
                 onToggleFav={toggleFavorite}

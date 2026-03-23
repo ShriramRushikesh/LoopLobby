@@ -32,10 +32,11 @@ export default function FavoritesList() {
           className="group flex items-center gap-3 p-2 rounded-2xl bg-pink-500/5 border border-pink-500/10 hover:bg-pink-500/10 hover:border-pink-500/30 transition-all cursor-pointer"
           onClick={() => playSong(song)}
         >
-          <div className="relative w-12 h-12 shrink-0">
+          <div className="text-[10px] font-bold text-pink-500/30 w-4 text-right shrink-0">{i + 1}</div>
+          <div className="relative w-10 h-10 shrink-0">
             <img src={song.thumbnail} className="w-full h-full rounded-xl object-cover shadow-lg border border-white/5" alt={song.title} />
             <div className="absolute inset-0 bg-pink-500/20 opacity-0 group-hover:opacity-100 flex items-center justify-center rounded-xl transition-opacity">
-              <Play className="w-5 h-5 text-white fill-current" />
+              <Play className="w-4 h-4 text-white fill-current" />
             </div>
           </div>
           <div className="flex-1 min-w-0">

@@ -177,7 +177,7 @@ export default function Room() {
           </div>
         </header>
 
-      <main className="max-w-[1400px] mx-auto p-4 lg:p-8 flex flex-col lg:grid lg:grid-cols-3 gap-8 h-[calc(100vh-140px)] lg:h-[calc(100vh-80px)] overflow-hidden">
+      <main className="w-full mx-auto p-4 lg:p-6 flex flex-col lg:grid lg:grid-cols-3 gap-6 h-[calc(100vh-140px)] lg:h-[calc(100vh-80px)] overflow-hidden lg:max-h-[calc(100vh-80px)]">
         
         {/* LEFT SECTION (2/3 Width on Desktop) */}
         <div className={`${mobileTab === 'player' || mobileTab === 'extras' ? 'flex' : 'hidden'} lg:flex lg:col-span-2 flex-col gap-6 h-full overflow-hidden`}>
