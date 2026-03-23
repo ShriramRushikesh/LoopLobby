@@ -111,6 +111,13 @@ export default function RoomPlayer({ isHost, compact = false }) {
                 className="absolute left-0 h-full bg-gradient-to-r from-pink-500 to-purple-500 rounded-full"
                 style={{ width: `${pct}%` }}
               />
+              {/* Visible Handle */}
+              {hasSong && (
+                <div 
+                  className="absolute w-3 h-3 bg-white rounded-full shadow-lg border border-pink-500/50 pointer-events-none transition-all duration-75"
+                  style={{ left: `calc(${pct}% - 6px)` }}
+                />
+              )}
               <input
                 type="range"
                 min={0}
@@ -203,6 +210,13 @@ export default function RoomPlayer({ isHost, compact = false }) {
                 className="absolute left-0 h-full bg-gradient-to-r from-pink-500 to-purple-500 rounded-full pointer-events-none transition-none"
                 style={{ width: `${pct}%` }}
               />
+              {/* Visible Handle */}
+              {hasSong && (
+                <div 
+                  className="absolute w-5 h-5 bg-white rounded-full shadow-2xl border-2 border-pink-500/50 pointer-events-none transition-all duration-75 z-20"
+                  style={{ left: `calc(${pct}% - 10px)` }}
+                />
+              )}
               <input
                 type="range"
                 min={0}

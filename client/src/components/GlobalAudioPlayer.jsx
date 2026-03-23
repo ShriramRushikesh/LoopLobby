@@ -104,6 +104,7 @@ export default function GlobalAudioPlayer() {
 
   // Track previous song to detect changes
   const prevVideoId = useRef(null);
+  const unmutedForCurrent = useRef(false);
 
   useEffect(() => {
     startEngine(setProgress, isPlayingRef);
@@ -117,13 +118,14 @@ export default function GlobalAudioPlayer() {
     // Reset audible state immediately on song change
     if (prevVideoId.current !== vid) {
       setIsAudible(false);
+      unmutedForCurrent.current = false;
       prevVideoId.current = vid;
     }
 
     if (_p.ref) {
       if (_loadTimer) clearTimeout(_loadTimer);
 
-      const wait = 3000; // 3 second mandatory pre-load/intro delay
+      const wait = 2000; // Reduced from 3s to 2s for better responsiveness
       
       const startAt = Math.max(0, expectedTime(isPlayingRef));
       console.log(`[GlobalPlayer] Pre-loading ${vid} at ${startAt}s (3s delay starting...)`);
@@ -139,13 +141,15 @@ export default function GlobalAudioPlayer() {
         }
 
         _loadTimer = setTimeout(() => {
-          console.log(`[GlobalPlayer] 3s delay over, enabling audio for ${vid}`);
+          if (unmutedForCurrent.current) return;
+          console.log(`[GlobalPlayer] 2s delay over, enabling audio for ${vid}`);
           try {
             if (_started) {
               _p.ref.unMute(); 
               _p.ref.setVolume(volumeRef.current * 100);
               _p.ref.playVideo();
               setIsAudible(true);
+              unmutedForCurrent.current = true;
             }
           } catch (e) {}
         }, wait);
@@ -278,10 +282,31 @@ export default function GlobalAudioPlayer() {
     }
   }, []);
 
-  const onStateChange = useCallback((event) => {
-    if (event.data === 1 && !isPlayingRef.current) setIsPlaying(true);
-    if (event.data === 2 && isPlayingRef.current) setIsPlaying(false);
-  }, []);
+  const onStateChange = useCallback((e) => {
+    // data 1 = PLAYING
+    if (e.data === 1) {
+      // If we are in the intro phase but the video is already playing (buffered), 
+      // we can unmute slightly early if at least 1s has passed to ensure a smooth start.
+      if (!isAudible && _started && !unmutedForCurrent.current) {
+        // We'll let the timer handle it unless we want to be aggressive.
+        // Let's stick to the 2s timer for the "branding" feel, but ensure it's unmuted.
+        // However, if the video is already playing (buffered) and we're past the initial load,
+        // we can unmute immediately for a smoother experience.
+        if (_p.ref?.getCurrentTime() > 1) { // If already playing for at least 1 second
+          try {
+            _p.ref.unMute();
+            _p.ref.setVolume(volumeRef.current * 100);
+            setIsAudible(true);
+            unmutedForCurrent.current = true;
+          } catch (error) {
+            console.error("Error unmuting early:", error);
+          }
+        }
+      }
+      setIsPlaying(true);
+    }
+    if (e.data === 2 && isPlayingRef.current) setIsPlaying(false);
+  }, [isAudible, _started, unmutedForCurrent, setIsPlaying, volumeRef]);
 
   const onEnd = useCallback(() => {
     if (queue?.length > 0) socket?.emit('change-song', { roomId, song: queue[0] });
