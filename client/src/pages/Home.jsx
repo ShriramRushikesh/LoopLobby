@@ -37,10 +37,10 @@ export default function Home() {
       >
         <div className="text-center mb-10 relative">
           {/* Indian Pride & Header Thought */}
-          <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-full mb-8 backdrop-blur-md">
+          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500/5 via-white/5 to-green-500/5 border border-white/10 px-5 py-2.5 rounded-full mb-8 backdrop-blur-xl shadow-2xl scale-105">
             <span className="text-sm italic text-zinc-400 font-medium">✨ "One Vibe. One Sync."</span>
-            <span className="text-zinc-700 mx-2">|</span>
-            <span className="text-[10px] font-black uppercase tracking-widest text-white flex items-center gap-1.5 focus:outline-none">
+            <span className="text-zinc-800 mx-2">|</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-white flex items-center gap-2 group cursor-default">
               Made in Solapur 🇮🇳
             </span>
           </div>

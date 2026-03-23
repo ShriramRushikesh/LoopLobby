@@ -28,11 +28,14 @@ export default function Footer() {
         </nav>
 
         <div className="flex flex-col items-center md:items-end gap-2 text-zinc-500 text-[10px] font-bold tracking-widest uppercase">
-          <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-full border border-white/5">
-            <span className="text-sm">🇮🇳</span>
-            <span>Made in Solapur, India</span>
+          <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-full border border-white/5 backdrop-blur-md">
+            <span className="text-base">🇮🇳</span>
+            <div className="flex flex-col items-start leading-none gap-1">
+              <span>Made in Solapur, India</span>
+              <span className="text-[8px] opacity-40">Digital India Initiative</span>
+            </div>
           </div>
-          <p className="opacity-50">&copy; {new Date().getFullYear()} LoopLobby</p>
+          <p className="opacity-50 mt-1">&copy; {new Date().getFullYear()} LoopLobby</p>
         </div>
       </div>
     </footer>
