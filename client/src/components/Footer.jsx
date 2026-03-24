@@ -35,7 +35,8 @@ export default function Footer() {
               <span className="text-[8px] opacity-40">Digital India Initiative</span>
             </div>
           </div>
-          <p className="opacity-50 mt-1">&copy; {new Date().getFullYear()} LoopLobby</p>
+          <p className="opacity-50 mt-1">Developed by Rushikesh Shriram</p>
+          <p className="opacity-50">&copy; {new Date().getFullYear()} LoopLobby</p>
         </div>
       </div>
     </footer>

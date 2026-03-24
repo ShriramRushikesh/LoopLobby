@@ -2,7 +2,7 @@ import React from 'react';
 import { Mail, MessageCircle, Clock } from 'lucide-react';
 
 export default function Contact() {
-  const contactEmail = "shriramrushikesh@gmail.com"; // Placeholder replaced with common sense or generic
+  const contactEmail = "rishi.shriram5@gmail.com";
 
   return (
     <div className="min-h-screen bg-[#0a0a0c] text-white p-6 md:p-12 flex items-center justify-center">

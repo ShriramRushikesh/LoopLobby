@@ -1,5 +1,5 @@
 import React from 'react';
-import { Music, Heart, Users, Shield } from 'lucide-react';
+import { Music, Heart, Users, Shield, Github, Linkedin, Instagram, Mail } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function About() {
@@ -40,6 +40,42 @@ export default function About() {
               Designed and built in India, LoopLobby is a community-driven project. We focus on 
               minimalism, privacy, and visual excellence to give you the most premium experience possible.
             </p>
+          </div>
+        </section>
+
+        <section className="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl">
+          <div className="flex flex-col md:flex-row items-center gap-8">
+            <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center text-4xl shadow-xl shadow-pink-500/20">
+              🤖
+            </div>
+            <div className="flex-1 text-center md:text-left space-y-4">
+              <div>
+                <h2 className="text-3xl font-bold text-white mb-1">🤖+ 🧠 rushikesh shriram</h2>
+                <div className="group relative inline-block">
+                  <p className="text-pink-400 font-medium cursor-help transition-all duration-300 group-hover:text-purple-400 group-hover:scale-105">
+                    Full Stack Developer & UI Designer
+                  </p>
+                  <div className="absolute -top-12 left-1/2 -translate-x-1/2 px-3 py-1 bg-white text-black text-xs font-bold rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-xl">
+                    Crafting digital experiences ✨
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex flex-wrap justify-center md:justify-start gap-4">
+                <a href="https://github.com/ShriramRushikesh" target="_blank" rel="noopener noreferrer" className="p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-pink-500/50 transition-all text-zinc-400 hover:text-white group">
+                  <Github className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                </a>
+                <a href="https://www.linkedin.com/in/rushikesh-shriram-608490259/" target="_blank" rel="noopener noreferrer" className="p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-pink-500/50 transition-all text-zinc-400 hover:text-white group">
+                  <Linkedin className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                </a>
+                <a href="https://www.instagram.com/shriramrushi_5_5_5" target="_blank" rel="noopener noreferrer" className="p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-pink-500/50 transition-all text-zinc-400 hover:text-white group">
+                  <Instagram className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                </a>
+                <a href="mailto:rishi.shriram5@gmail.com" className="p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-pink-500/50 transition-all text-zinc-400 hover:text-white group">
+                  <Mail className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                </a>
+              </div>
+            </div>
           </div>
         </section>
 
