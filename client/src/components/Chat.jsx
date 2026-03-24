@@ -5,10 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const Chat = ({ username }) => {
   const [msg, setMsg] = useState('');
-  const chatMessages = useRoomStore(s => s.chatMessages);
-  const socket = useRoomStore(s => s.socket);
-  const isTyping = useRoomStore(s => s.isTyping);
-  const typingMsg = useRoomStore(s => s.typingMsg);
+  const { chatMessages, socket, isTyping, typingMsg } = useRoomStore();
   const endRef = useRef();
   let typingTimeout = useRef(null);
 

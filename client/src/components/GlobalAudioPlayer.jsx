@@ -140,21 +140,11 @@ function startEngine(setProgress, isPlayingRef) {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function GlobalAudioPlayer() {
-  const currentSong = useRoomStore(s => s.currentSong);
-  const isPlaying = useRoomStore(s => s.isPlaying);
-  const volume = useRoomStore(s => s.volume);
-  const isAudible = useRoomStore(s => s.isAudible);
-  const socket = useRoomStore(s => s.socket);
-  const room = useRoomStore(s => s.room);
-  const queue = useRoomStore(s => s.queue);
-  
-  const setProgress = useRoomStore(s => s.setProgress);
-  const setIsPlaying = useRoomStore(s => s.setIsPlaying);
-  const setCurrentSong = useRoomStore(s => s.setCurrentSong);
-  const updateCurrentSong = useRoomStore(s => s.updateCurrentSong);
-  const setLatency = useRoomStore(s => s.setLatency);
-  const setDuration = useRoomStore(s => s.setDuration);
-  const setIsAudible = useRoomStore(s => s.setIsAudible);
+  const {
+    currentSong, isPlaying, volume, isAudible,
+    setProgress, setIsPlaying, setCurrentSong, setLatency, setDuration,
+    setIsAudible, socket, room, queue, updateCurrentSong,
+  } = useRoomStore();
 
   const roomId = room?.roomId || room?.id;
   const isPlayingRef = useRef(isPlaying);
@@ -342,10 +332,10 @@ export default function GlobalAudioPlayer() {
           artist: pulse.artist,
           thumbnail: pulse.artwork_url,
         });
-        return;
+        return; // song load effect will handle the seek
       }
 
-      // Update authoritative clock reference only — RAF handles UI rendering
+      // Update authoritative clock reference only — RAF engine handles correction
       _s.time = pulse.position_ms / 1000;
       _s.at = pulse.server_ts;
     };

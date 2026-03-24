@@ -23,6 +23,7 @@ export default function Room() {
   const setRoom = useRoomStore(s => s.setRoom);
   const room = useRoomStore(s => s.room);
   const currentSong = useRoomStore(s => s.currentSong);
+  const socket = useRoomStore(s => s.socket);
   const moodMode = useRoomStore(s => s.moodMode);
   const setMoodMode = useRoomStore(s => s.setMoodMode);
   const addChatMessage = useRoomStore(s => s.addChatMessage);
@@ -32,6 +33,8 @@ export default function Room() {
   const setTyping = useRoomStore(s => s.setTyping);
   const updateRoomQueue = useRoomStore(s => s.updateRoomQueue);
   const updateRoomFavorites = useRoomStore(s => s.updateRoomFavorites);
+  const updateCurrentSong = useRoomStore(s => s.updateCurrentSong);
+  const updateSongProgress = useRoomStore(s => s.updateSongProgress);
   const [isShaking, setIsShaking] = useState(false);
   const [copied, setCopied] = useState(false);
   const [mobileTab, setMobileTab] = useState('player');
@@ -58,7 +61,8 @@ export default function Room() {
     
     newSocket.on('queue_updated', updateRoomQueue);
     newSocket.on('favorites_updated', updateRoomFavorites);
-    // sync-song and sync-progress are handled by GlobalAudioPlayer to avoid redundant state updates
+    newSocket.on('sync_player', updateCurrentSong);
+    newSocket.on('sync_progress', updateSongProgress);
     
     newSocket.on('receive_message', addChatMessage);
     newSocket.on('receive_love_note', addLoveNote);
