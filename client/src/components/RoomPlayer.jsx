@@ -35,18 +35,31 @@ export default function RoomPlayer({ isHost, compact = false }) {
   }, [socket, roomId]);
 
   const togglePlay = useCallback(() => {
-    if (!currentSong || !socket) return;
-    const exactTime = audioEngine.getCurrentTime();
+    const s = !!socket;
+    const c = !!currentSong;
+    const r = !!roomId;
+    console.log(`[RoomPlayer] Toggle requested. isPlaying:${isPlaying}, socket:${s}, song:${c}, room:${r} (${roomId})`);
+
+    if (!currentSong || !socket || !roomId) {
+      console.warn('[RoomPlayer] Missing deps for toggle:', { song:c, socket:s, roomId:r });
+      return;
+    }
+    
+    // Get time from audio engine
+    const exactTime = audioEngine.getCurrentTime() || 0;
+    
     if (isPlaying) {
+      console.log('[RoomPlayer] Locality: Pausing at', exactTime);
       audioEngine.pause();
       setIsPlaying(false);
       socket.emit('pause', { roomId, currentTime: exactTime });
     } else {
+      console.log('[RoomPlayer] Locality: Playing from', exactTime);
       audioEngine.play();
       setIsPlaying(true);
       socket.emit('play', { roomId, currentTime: exactTime });
     }
-  }, [isPlaying, currentSong, socket, roomId]);
+  }, [isPlaying, currentSong, socket, roomId, setIsPlaying]);
 
   const playNext = useCallback(() => {
     if (room?.queue?.length > 0 && socket) {
@@ -74,15 +87,8 @@ export default function RoomPlayer({ isHost, compact = false }) {
   if (compact) {
     return (
       <div className="bg-black/40 rounded-[2rem] border border-white/5 backdrop-blur-3xl p-5 relative overflow-hidden flex flex-col">
-        {hasSong && currentSong.thumbnail && (
-          <div
-            className="absolute inset-0 bg-cover bg-center opacity-10 blur-2xl pointer-events-none"
-            style={{ backgroundImage: `url(${currentSong.thumbnail})` }}
-          />
-        )}
-        
         <div className="relative z-10 flex items-center gap-4">
-          <div className="w-20 h-20 rounded-full bg-zinc-800 shadow-[0_0_20px_rgba(236,72,153,0.2)] overflow-hidden flex-shrink-0 relative border border-white/10 p-1">
+          <div className="w-20 h-20 rounded-full bg-zinc-800 overflow-hidden flex-shrink-0 relative border border-white/10 p-1">
             <div className="w-full h-full rounded-full overflow-hidden">
               {hasSong && currentSong.thumbnail ? (
                 <img src={currentSong.thumbnail} alt="thumbnail" className="w-full h-full object-cover" />
@@ -153,13 +159,6 @@ export default function RoomPlayer({ isHost, compact = false }) {
   return (
     <div className="bg-black/40 rounded-[2rem] border border-white/10 backdrop-blur-3xl p-6 lg:p-7 relative overflow-hidden flex flex-col shadow-2xl ring-1 ring-white/5 transition-all duration-500 hover:border-white/20">
       <div className="absolute inset-0 bg-gradient-to-br from-zinc-800/10 via-transparent to-zinc-900/10 opacity-30" />
-      {hasSong && currentSong.thumbnail && (
-        <div
-          className="absolute inset-0 bg-cover bg-center opacity-10 blur-[60px] pointer-events-none"
-          style={{ backgroundImage: `url(${currentSong.thumbnail})` }}
-        />
-      )}
-
       <div className="relative z-10 flex flex-col lg:flex-row gap-6 lg:gap-10 items-center lg:items-center w-full h-full">
         {/* Album Art - Compacted */}
         <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-3xl bg-zinc-800 shadow-[0_15px_40px_rgba(0,0,0,0.5)] overflow-hidden flex-shrink-0 relative group transition-transform duration-500 hover:scale-[1.02]">

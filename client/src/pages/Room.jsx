@@ -13,7 +13,8 @@ import SongLyrics from '../components/SongLyrics';
 import QueueList from '../components/QueueList';
 import FavoritesList from '../components/FavoritesList';
 import AdBanner from '../components/AdBanner';
-import { Share2, Users, MessageCircle, Instagram, Music, Search, Sparkles, MessageSquare, Heart, ListMusic } from 'lucide-react';
+import HistoryList from '../components/HistoryList';
+import { Share2, Users, MessageCircle, Instagram, Music, Search, Sparkles, MessageSquare, Heart, ListMusic, History } from 'lucide-react';
 
 export default function Room() {
   const { id } = useParams();
@@ -46,7 +47,10 @@ export default function Room() {
       return;
     }
 
-    const newSocket = io(import.meta.env.VITE_API_URL || 'http://localhost:5001');
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const apiUrl = isLocal ? 'http://localhost:5001' : (import.meta.env.VITE_API_URL || 'https://ruru-sync-vibe.onrender.com');
+    console.log('[LoopLobby] Connecting to API:', apiUrl);
+    const newSocket = io(apiUrl);
     setSocket(newSocket);
 
     newSocket.emit('join_room', { 
@@ -61,8 +65,7 @@ export default function Room() {
     
     newSocket.on('queue_updated', updateRoomQueue);
     newSocket.on('favorites_updated', updateRoomFavorites);
-    newSocket.on('sync_player', updateCurrentSong);
-    newSocket.on('sync_progress', updateSongProgress);
+    // sync-song and sync-progress are handled by GlobalAudioPlayer to avoid redundant state updates
     
     newSocket.on('receive_message', addChatMessage);
     newSocket.on('receive_love_note', addLoveNote);
@@ -212,7 +215,7 @@ export default function Room() {
           </div>
         </header>
 
-      <main className={`max-w-[1600px] mx-auto ${['chat', 'extras'].includes(mobileTab) ? 'p-0' : 'p-4'} lg:p-6 flex flex-col lg:grid lg:grid-cols-[1.3fr_0.85fr_0.85fr] gap-6 h-[calc(100vh-140px)] lg:h-[calc(100vh-80px)] overflow-hidden`}>
+      <main className={`max-w-[1600px] mx-auto ${['chat', 'extras'].includes(mobileTab) ? 'p-0' : 'p-4'} lg:p-6 flex flex-col lg:grid lg:grid-cols-[1.3fr_0.85fr_0.85fr] gap-6 h-[calc(100svh-130px)] lg:h-[calc(100vh-80px)] overflow-hidden`}>
         
         {/* COLUMN 1: Room Extra (Desktop) / Player Tab (Mobile) */}
         <div className={`${mobileTab === 'player' ? 'flex' : 'hidden'} lg:flex flex-col gap-6 h-full overflow-hidden`}>
@@ -259,6 +262,9 @@ export default function Room() {
                 <button onClick={() => setPlayerSubTab('queue')} className={`transition-all ${playerSubTab === 'queue' ? 'text-blue-400 scale-125' : 'text-zinc-600'}`}>
                   <ListMusic className="w-8 h-8" />
                 </button>
+                <button onClick={() => setPlayerSubTab('history')} className={`transition-all ${playerSubTab === 'history' ? 'text-pink-400 scale-125' : 'text-zinc-600'}`}>
+                  <History className="w-8 h-8" />
+                </button>
               </div>
 
               {/* Content Area */}
@@ -266,6 +272,7 @@ export default function Room() {
                 {playerSubTab === 'search' && <MusicSearch />}
                 {playerSubTab === 'fav' && <FavoritesList />}
                 {playerSubTab === 'queue' && <QueueList />}
+                {playerSubTab === 'history' && <HistoryList />}
                 {playerSubTab === 'lyrics' && (
                   <div className="p-4">
                     {currentSong ? <SongLyrics currentSong={currentSong} /> : <div className="p-8 text-center text-zinc-500">Play a song to see lyrics</div>}
@@ -283,30 +290,37 @@ export default function Room() {
              {/* Integrated Header: Tabs Switcher (Icons) */}
              <div className="hidden lg:flex flex-col shrink-0 bg-white/5 border-b border-white/10">
                 <div className="flex px-6 gap-10 py-4 items-center">
-                <div className="flex items-center gap-3 bg-zinc-900/50 px-2.5 py-1.5 rounded-xl border border-white/5">
-                   <button 
-                     onClick={() => setPlayerSubTab('search')} 
-                     className={`transition-all hover:scale-110 ${playerSubTab === 'search' ? 'text-blue-400' : 'text-zinc-600'}`}
-                     title="Search Music"
-                   >
-                      <Search className={`w-4 h-4 ${playerSubTab === 'search' ? 'drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]' : ''}`} />
-                   </button>
-                   <button 
-                     onClick={() => setPlayerSubTab('fav')} 
-                     className={`transition-all hover:scale-110 ${playerSubTab === 'fav' ? 'text-pink-400' : 'text-zinc-600'}`}
-                     title="Liked Songs"
-                   >
-                      <Heart className={`w-4 h-4 ${playerSubTab === 'fav' ? 'fill-pink-400 drop-shadow-[0_0_8px_rgba(244,114,182,0.5)]' : ''}`} />
-                   </button>
-                   <button 
-                     onClick={() => setPlayerSubTab('queue')} 
-                     className={`transition-all hover:scale-110 ${playerSubTab === 'queue' ? 'text-purple-400' : 'text-zinc-600'}`}
-                     title="Music Queue"
-                   >
-                      <ListMusic className={`w-4 h-4 ${playerSubTab === 'queue' ? 'drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]' : ''}`} />
-                   </button>
+                   <div className="flex items-center gap-3 bg-zinc-900/50 px-2.5 py-1.5 rounded-xl border border-white/5">
+                      <button 
+                        onClick={() => setPlayerSubTab('search')} 
+                        className={`transition-all hover:scale-110 ${playerSubTab === 'search' ? 'text-blue-400' : 'text-zinc-600'}`}
+                        title="Search Music"
+                      >
+                         <Search className={`w-4 h-4 ${playerSubTab === 'search' ? 'drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]' : ''}`} />
+                      </button>
+                      <button 
+                        onClick={() => setPlayerSubTab('fav')} 
+                        className={`transition-all hover:scale-110 ${playerSubTab === 'fav' ? 'text-pink-400' : 'text-zinc-600'}`}
+                        title="Liked Songs"
+                      >
+                         <Heart className={`w-4 h-4 ${playerSubTab === 'fav' ? 'fill-pink-400 drop-shadow-[0_0_8px_rgba(244,114,182,0.5)]' : ''}`} />
+                      </button>
+                      <button 
+                        onClick={() => setPlayerSubTab('queue')} 
+                        className={`transition-all hover:scale-110 ${playerSubTab === 'queue' ? 'text-purple-400' : 'text-zinc-600'}`}
+                        title="Music Queue"
+                      >
+                         <ListMusic className={`w-4 h-4 ${playerSubTab === 'queue' ? 'drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]' : ''}`} />
+                      </button>
+                      <button 
+                        onClick={() => setPlayerSubTab('history')} 
+                        className={`transition-all hover:scale-110 ${playerSubTab === 'history' ? 'text-pink-400' : 'text-zinc-600'}`}
+                        title="Playback History"
+                      >
+                         <History className={`w-4 h-4 ${playerSubTab === 'history' ? 'drop-shadow-[0_0_8px_rgba(244,114,182,0.5)]' : ''}`} />
+                      </button>
+                   </div>
                 </div>
-</div>
              </div>
             
             {/* Scrollable Content Area */}
@@ -315,6 +329,7 @@ export default function Room() {
                    {playerSubTab === 'search' && <MusicSearch />}
                    {playerSubTab === 'fav' && <FavoritesList />}
                    {playerSubTab === 'queue' && <QueueList />}
+                   {playerSubTab === 'history' && <HistoryList />}
                 </div>
 
                 {/* Mobile View extras (fallback for this column) */}
@@ -327,9 +342,9 @@ export default function Room() {
         </div>
 
         {/* COLUMN 3: Chat (Full Height) & Support (Desktop) / Chat Tab (Mobile) */}
-        <div className={`${mobileTab === 'chat' ? 'flex' : 'hidden'} lg:flex flex-col lg:gap-6 h-full overflow-hidden`}>
+        <div className={`${mobileTab === 'chat' ? 'flex' : 'hidden'} lg:flex flex-col lg:gap-6 h-full lg:overflow-y-auto custom-scrollbar overflow-hidden`}>
            {/* Chat - Expanded Height */}
-           <div className="flex-[4] lg:bg-black/40 lg:rounded-[2.5rem] lg:border lg:border-white/10 lg:shadow-2xl lg:backdrop-blur-3xl overflow-hidden flex flex-col min-h-0 lg:ring-1 lg:ring-white/5">
+           <div className="flex-1 lg:h-[720px] lg:flex-none lg:bg-black/40 lg:rounded-[2.5rem] lg:border lg:border-white/10 lg:shadow-2xl lg:backdrop-blur-3xl overflow-hidden flex flex-col min-h-0 lg:ring-1 lg:ring-white/5">
               <div className="px-5 lg:px-6 py-4 border-b border-white/5 flex justify-between items-center bg-white/5">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e] animate-pulse" />

@@ -39,6 +39,7 @@ export const useRoomStore = create((set) => ({
       queue: room?.queue || [],
       currentSong: isSameSong ? state.currentSong : nextSong,
       members: room?.users || [],
+      recentlyPlayed: room?.recentlyPlayed || state.recentlyPlayed,
     };
   }),
   // ... existing actions ...
@@ -49,17 +50,21 @@ export const useRoomStore = create((set) => ({
   setDuration: (duration) => set({ duration }),
   setIsAudible: (isAudible) => set({ isAudible }),
   setCurrentSong: (currentSong) => set({ currentSong }),
-  updateCurrentSong: (song) => set((state) => {
-    if (song?.videoId && song.videoId !== state.currentSong?.videoId) {
-      // Logic for recently played
-      const filtered = state.recentlyPlayed.filter(s => s.videoId !== song.videoId);
+  updateCurrentSong: (song, recentlyPlayed) => set((state) => {
+    const history = recentlyPlayed || state.recentlyPlayed;
+    if (song?.videoId && !recentlyPlayed) {
+      // Local fallback if server didn't provide history yet
+      const filtered = history.filter(s => s.videoId !== song.videoId);
       state.recentlyPlayed = [song, ...filtered].slice(0, 10);
+    } else if (recentlyPlayed) {
+      state.recentlyPlayed = recentlyPlayed;
     }
+
     return {
-      room: state.room ? { ...state.room, song } : state.room,
+      room: state.room ? { ...state.room, song, recentlyPlayed: state.recentlyPlayed } : state.room,
       currentSong: song,
-      progress: 0, // Reset progress on song change
-      recentlyPlayed: [...state.recentlyPlayed], // ensure reactivity
+      progress: 0,
+      recentlyPlayed: [...state.recentlyPlayed], 
     };
   }),
   setQueue: (queue) => set({ queue }),

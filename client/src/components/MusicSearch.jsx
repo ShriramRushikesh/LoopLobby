@@ -55,7 +55,10 @@ const MusicSearch = () => {
     queryKey: ['music-search', searchTerm],
     queryFn: async () => {
       if (!searchTerm) return [];
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/music/search?q=${encodeURIComponent(searchTerm)}`);
+      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const apiUrl = isLocal ? 'http://localhost:5001' : (import.meta.env.VITE_API_URL || 'https://ruru-sync-vibe.onrender.com');
+      console.log('[LoopLobby] Searching music via:', `${apiUrl}/api/music/search`);
+      const res = await fetch(`${apiUrl}/api/music/search?q=${encodeURIComponent(searchTerm)}`);
       if (!res.ok) return [];
       const data = await res.json();
       return data.results || [];

@@ -17,7 +17,7 @@ const startSyncInterval = (io) => {
         isPlaying: room.isPlaying
       });
     });
-  }, 200);
+  }, 500);
 
   // 2. Authoritative AntiGravity sync_pulse (1s - for metadata & drift correction)
   setInterval(() => {
@@ -60,6 +60,7 @@ module.exports = (io, socket) => {
         currentTime: 0,
         updatedAt: Date.now(),
         queue: [],
+        recentlyPlayed: [], // Room-wide persistent history
         favorites: [],
         chatHistory: [],
         stats: { songsListened: 0, timeSpentMs: 0 },
@@ -90,6 +91,7 @@ module.exports = (io, socket) => {
       isPlaying: room.isPlaying,
       currentTime: currentPos,
       serverTime: now,
+      recentlyPlayed: room.recentlyPlayed || [], // shared history
     });
 
     // ── Latency ──────────────────────────────────────────────────────────────
@@ -110,17 +112,18 @@ module.exports = (io, socket) => {
 
     // ── Music Sync Engine ─────────────────────────────────────────────────────
     socket.on('play', ({ roomId: rid, currentTime }) => {
+      console.log(`[Socket] PLAY in ${rid} at ${currentTime}`);
       const r = rooms[rid];
       if (!r) return;
       const serverTime = Date.now();
       r.isPlaying = true;
       r.currentTime = currentTime;
       r.updatedAt = serverTime;
-      // Send serverTime so all clients can align clocks precisely
       socket.to(rid).emit('sync-play', { currentTime, updatedAt: serverTime, serverTime });
     });
 
     socket.on('pause', ({ roomId: rid, currentTime }) => {
+      console.log(`[Socket] PAUSE in ${rid} at ${currentTime}`);
       const r = rooms[rid];
       if (!r) return;
       const serverTime = Date.now();
@@ -160,11 +163,30 @@ module.exports = (io, socket) => {
         }
       }
 
+      // Push previous song to history if changing to a new one
+      if (r.song && r.song.videoId !== nextSong?.videoId) {
+        const history = r.recentlyPlayed || [];
+        const exists = history.find(s => (s.videoId || s.id) === (r.song.videoId || r.song.id));
+        if (!exists) {
+          r.recentlyPlayed = [r.song, ...history].slice(0, 20);
+        }
+      }
+
       r.song = nextSong;
       r.currentTime = 0;
-      r.isPlaying = true;
+      r.isPlaying = false;
       r.updatedAt = Date.now();
-      io.to(rid).emit('sync-song', { song: r.song, serverTime: r.updatedAt });
+      io.to(rid).emit('room_update', r);
+      io.to(rid).emit('sync-song', { song: r.song, serverTime: r.updatedAt, isPlaying: false, recentlyPlayed: r.recentlyPlayed });
+
+      // 3s Pre-roll buffer to allow all clients to load/buffer
+      setTimeout(() => {
+        if (rooms[rid] && rooms[rid].song === nextSong) {
+          rooms[rid].isPlaying = true;
+          rooms[rid].updatedAt = Date.now();
+          io.to(rid).emit('sync-play', { currentTime: 0, serverTime: rooms[rid].updatedAt });
+        }
+      }, 3000);
     });
 
     // ── Queue & Favorites ─────────────────────────────────────────────────────

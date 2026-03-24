@@ -45,6 +45,7 @@ function CoupleFeatures({ username }) {
     setUsedIndices(prev => [...prev, randomIndex]);
     
     setTimeout(() => {
+      console.log('[LoopLobby] Sending love note:', randomComp);
       socket.emit('send_love_note', { id: Date.now(), message: randomComp });
       setIsGenerating(false);
     }, 800);

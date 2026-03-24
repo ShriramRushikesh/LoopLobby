@@ -9,6 +9,7 @@ let _raf = null;
 let _started = false;
 let _lastCorrection = 0;
 let _loadTimer = null;
+let _pendingSync = null; // store sync state if player not ready
 
 // ── Resync lock ───────────────────────────────────────────────────────────────
 // When the engine triggers its own pause→seek→play cycle, YouTube fires
@@ -16,7 +17,7 @@ let _loadTimer = null;
 // the authoritative isPlaying state and cause the UI to flicker play→pause→play.
 // The lock blocks onStateChange from updating React state during any internal seek.
 let _internalSeek = false;
-const INTERNAL_SEEK_LOCK_MS = 600; // covers pause + seek + buffer + play
+const INTERNAL_SEEK_LOCK_MS = 800; // covers pause + seek + buffer + play
 
 function lockSeek() {
   _internalSeek = true;
@@ -79,7 +80,7 @@ function expectedTime(isPlayingRef) {
 // Centralising here means only one system ever seeks. Two systems seeking on
 // different schedules was the root cause of the inter-user lag.
 function applySyncCorrection(isPlayingRef) {
-  if (!_p.ref || !_s.at || !isPlayingRef.current) return;
+  if (!_p.ref || !_s.at || !isPlayingRef.current || _internalSeek) return;
 
   let actual;
   try { actual = _p.ref.getCurrentTime(); } catch (_) { return; }
@@ -88,20 +89,20 @@ function applySyncCorrection(isPlayingRef) {
   const drift = actual - expected;
   const absDrift = Math.abs(drift);
 
-  if (absDrift > 0.1) {
-    console.log(`[AntiGravity] Drift ${drift.toFixed(3)}s → atomic resync`);
+  // Skip sync during buffering (state 3) or if not ready
+  try { if (_p.ref.getPlayerState() === 3) return; } catch (_) {}
+
+  // Only perform atomic resync (seek) for major drifts > 1.5s.
+  // We no longer use setPlaybackRate (speed changes) as per user request.
+  if (absDrift > 1.5) {
+    console.log(`[AntiGravity] Major drift ${drift.toFixed(3)}s → atomic resync`);
     lockSeek();
     try {
       _p.ref.pauseVideo();
       _p.ref.seekTo(expected, true);
       _p.ref.playVideo();
-      _p.ref.setPlaybackRate(1.0);
+      _p.ref.setPlaybackRate(1.0); // Reset to original speed
     } catch (_) {}
-  } else if (absDrift > 0.03) {
-    // Soft nudge — no seek, no lock needed
-    try { _p.ref.setPlaybackRate(drift > 0 ? 0.95 : 1.05); } catch (_) {}
-  } else {
-    try { _p.ref.setPlaybackRate(1.0); } catch (_) {}
   }
 }
 
@@ -306,20 +307,43 @@ export default function GlobalAudioPlayer() {
       const song = payload?.videoId ? payload : payload?.song;
       const serverTime = payload?.serverTime || Date.now();
       if (!song) return;
+
+      console.log('[AntiGravity] sync-song:', song.title);
       _s.time = 0;
       _s.at = serverTime;
-      updateCurrentSong(song);
-      setIsPlaying(true);
+      _pendingSync = null; // Clear any old pending state
+      
+      updateCurrentSong(song, payload.recentlyPlayed);
+      setIsPlaying(payload?.isPlaying ?? true);
       setProgress(0);
+      setIsAudible(false);
+      unmutedForCurrent.current = false; // Force re-unmute for new song
     };
 
     const onSyncState = (state) => {
       if (!state.song) return;
+      console.log('[AntiGravity] sync-state joining:', state.song.title, state.currentTime);
+      
       _s.time = state.currentTime;
       _s.at = state.serverTime || Date.now();
-      setCurrentSong(state.song);
+      
+      updateCurrentSong(state.song, state.recentlyPlayed);
       setIsPlaying(state.isPlaying);
       setProgress(state.currentTime);
+
+      if (_p.ref) {
+        // Player already ready, load now
+        const startAt = Math.max(0, expectedTime(isPlayingRef));
+        _p.ref.loadVideoById({ videoId: state.song.videoId || state.song.id, startSeconds: startAt });
+        if (state.isPlaying) _p.ref.playVideo();
+      } else {
+        // Player not ready, save for onReady
+        _pendingSync = { 
+          videoId: state.song.videoId || state.song.id, 
+          isPlaying: state.isPlaying, 
+          currentTime: state.currentTime 
+        };
+      }
     };
 
     const onSyncPulse = (pulse) => {
@@ -435,35 +459,33 @@ export default function GlobalAudioPlayer() {
   }, []);
 
   // ── YouTube callbacks ───────────────────────────────────────────────────────
-  const onPlayerReady = useCallback((event) => {
-    _p.ref = event.target;
-    _p.ref.mute();
-    _p.ref.setVolume(0);
+    const onPlayerReady = useCallback((event) => {
+      _p.ref = event.target;
+      console.log('[AntiGravity] YouTube Player Ready');
+      _p.ref.mute();
+      _p.ref.setVolume(0);
 
-    const vid = currentSong?.videoId || currentSong?.id;
-    if (vid) {
-      const startAt = _s.at > 0 ? Math.max(0, expectedTime(isPlayingRef)) : 0;
-      _p.ref.loadVideoById({ videoId: vid, startSeconds: startAt });
-    }
-
-    try {
-      const dur = _p.ref.getDuration();
-      if (dur > 0) setDuration(dur * 1000);
-    } catch (_) {}
-
-    if (isPlayingRef.current) {
-      _p.ref.playVideo();
-      if (_started) {
-        setTimeout(() => {
-          try {
-            _p.ref?.unMute();
-            _p.ref?.setVolume(volumeRef.current * 100);
-          } catch (_) {}
-        }, 300);
+      // Handle users who joined and received state before player was ready
+      if (_pendingSync) {
+        console.log('[AntiGravity] Applying pending sync:', _pendingSync.videoId);
+        const startAt = Math.max(0, expectedTime(isPlayingRef));
+        _p.ref.loadVideoById({ videoId: _pendingSync.videoId, startSeconds: startAt });
+        if (_pendingSync.isPlaying) _p.ref.playVideo();
+        _pendingSync = null;
+        return;
       }
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+
+      const vid = currentSong?.videoId || currentSong?.id;
+      if (vid) {
+        const startAt = _s.at > 0 ? Math.max(0, expectedTime(isPlayingRef)) : 0;
+        _p.ref.loadVideoById({ videoId: vid, startSeconds: startAt });
+      }
+
+      if (isPlayingRef.current) {
+        _p.ref.playVideo();
+      }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
   const onStateChange = useCallback((e) => {
     // GUARD: Only block non-essential state changes during internal seeking.
